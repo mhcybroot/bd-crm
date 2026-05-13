@@ -72,7 +72,10 @@ public class DashboardService {
     public List<DueFollowupResponse> workQueue(DashboardFilterRequest filter) {
         User currentUser = securityUtils.currentUserEntity();
         boolean managerView = securityUtils.hasAnyRole("ADMIN", "MANAGER");
+        LocalDate today = LocalDate.now();
         return leadFollowupRepository.findByStatusInOrderByDueDateAsc(List.of(FollowupStatus.DUE, FollowupStatus.OVERDUE)).stream()
+                .filter(followup -> followup.getStatus() == FollowupStatus.OVERDUE
+                        || (followup.getStatus() == FollowupStatus.DUE && !followup.getDueDate().isAfter(today)))
                 .filter(followup -> {
                     LocalDate created = followup.getLead().getCreatedAt().toLocalDate();
                     return !created.isBefore(filter.effectiveDateFrom()) && !created.isAfter(filter.effectiveDateTo());

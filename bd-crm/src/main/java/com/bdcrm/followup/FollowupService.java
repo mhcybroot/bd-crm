@@ -66,15 +66,24 @@ public class FollowupService {
 
     @Transactional(readOnly = true)
     public List<LeadFollowupResponse> listWorkQueue(String statusFilter) {
-        List<FollowupStatus> statuses = switch (statusFilter == null ? "open" : statusFilter.toLowerCase()) {
-            case "due" -> List.of(FollowupStatus.DUE);
-            case "overdue" -> List.of(FollowupStatus.OVERDUE);
-            case "completed" -> List.of(FollowupStatus.COMPLETED);
-            default -> List.of(FollowupStatus.DUE, FollowupStatus.OVERDUE);
-        };
+        String effectiveFilter = statusFilter == null ? "open" : statusFilter.toLowerCase();
+        LocalDate today = LocalDate.now();
         User currentUser = securityUtils.currentUserEntity();
         boolean managerView = securityUtils.hasAnyRole("ADMIN", "MANAGER");
-        return leadFollowupRepository.findByStatusInOrderByDueDateAsc(statuses).stream()
+        List<LeadFollowup> queue = switch (effectiveFilter) {
+            case "due" -> leadFollowupRepository.findByStatusInAndDueDateLessThanEqualOrderByDueDateAsc(
+                    List.of(FollowupStatus.DUE), today);
+            case "overdue" -> leadFollowupRepository.findByStatusInOrderByDueDateAsc(List.of(FollowupStatus.OVERDUE));
+            case "completed" -> leadFollowupRepository.findByStatusInOrderByDueDateAsc(List.of(FollowupStatus.COMPLETED));
+            case "upcoming" -> leadFollowupRepository.findByStatusInOrderByDueDateAsc(List.of(FollowupStatus.DUE)).stream()
+                    .filter(followup -> followup.getDueDate().isAfter(today))
+                    .toList();
+            default -> leadFollowupRepository.findByStatusInOrderByDueDateAsc(List.of(FollowupStatus.DUE, FollowupStatus.OVERDUE)).stream()
+                    .filter(followup -> followup.getStatus() == FollowupStatus.OVERDUE
+                            || (followup.getStatus() == FollowupStatus.DUE && !followup.getDueDate().isAfter(today)))
+                    .toList();
+        };
+        return queue.stream()
                 .filter(followup -> managerView || followup.getAssignedUser().getId().equals(currentUser.getId()))
                 .map(LeadFollowupResponse::from)
                 .toList();

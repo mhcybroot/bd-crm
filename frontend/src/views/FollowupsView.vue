@@ -71,7 +71,7 @@ async function submitAction() {
         <h1 class="page-title">Follow-up Queue</h1>
         <p class="page-subtitle">Work the open cadence, handle overdue items, and keep ownership clear.</p>
       </div>
-      <v-select v-model="statusFilter" label="Queue" :items="['open', 'due', 'overdue', 'completed']" max-width="180" />
+      <v-select v-model="statusFilter" label="Queue" :items="['open', 'due', 'overdue', 'upcoming', 'completed']" max-width="180" />
     </div>
 
     <v-card>
