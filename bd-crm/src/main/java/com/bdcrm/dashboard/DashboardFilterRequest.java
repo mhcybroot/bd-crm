@@ -1,21 +1,27 @@
 package com.bdcrm.dashboard;
 
-import com.bdcrm.followup.FollowupOutcome;
-import com.bdcrm.lead.LeadStatus;
-import java.time.LocalDate;
+import lombok.Getter;
+import lombok.Setter;
 
-public record DashboardFilterRequest(
-        LocalDate dateFrom,
-        LocalDate dateTo,
-        Long repUserId,
-        LeadStatus leadStatus,
-        FollowupOutcome followupOutcome) {
+@Getter
+@Setter
+public class DashboardFilterRequest {
 
-    public LocalDate effectiveDateFrom() {
-        return dateFrom == null ? LocalDate.now().minusDays(30) : dateFrom;
+    private String dateFrom;
+    private String dateTo;
+    private Long repUserId;
+    private String leadStatus;
+    private String followupOutcome;
+
+    public java.time.LocalDate effectiveDateFrom() {
+        return dateFrom != null && !dateFrom.isBlank()
+                ? java.time.LocalDate.parse(dateFrom)
+                : java.time.LocalDate.now().minusDays(30);
     }
 
-    public LocalDate effectiveDateTo() {
-        return dateTo == null ? LocalDate.now() : dateTo;
+    public java.time.LocalDate effectiveDateTo() {
+        return dateTo != null && !dateTo.isBlank()
+                ? java.time.LocalDate.parse(dateTo)
+                : java.time.LocalDate.now();
     }
 }
