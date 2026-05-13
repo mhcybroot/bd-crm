@@ -9,6 +9,12 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 public interface LeadRepository extends JpaRepository<Lead, Long>, JpaSpecificationExecutor<Lead> {
 
     @Override
-    @EntityGraph(attributePaths = {"assignedUser", "template"})
+    @EntityGraph(attributePaths = {"assignedUser", "template", "currentStage"})
     Page<Lead> findAll(org.springframework.data.jpa.domain.Specification<Lead> spec, Pageable pageable);
+
+    @Override
+    @EntityGraph(attributePaths = {"assignedUser", "template", "currentStage"})
+    java.util.Optional<Lead> findById(Long id);
+
+    boolean existsByCurrentStageId(Long currentStageId);
 }

@@ -7,12 +7,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface FollowupTemplateRepository extends JpaRepository<FollowupTemplate, Long> {
 
-    @EntityGraph(attributePaths = "steps")
+    @EntityGraph(attributePaths = {"steps"})
     List<FollowupTemplate> findAllByOrderByNameAsc();
 
-    @EntityGraph(attributePaths = "steps")
+    @EntityGraph(attributePaths = {"steps"})
     Optional<FollowupTemplate> findById(Long id);
 
-    @EntityGraph(attributePaths = "steps")
+    @EntityGraph(attributePaths = {"steps"})
     Optional<FollowupTemplate> findFirstByIsDefaultTrueAndActiveTrue();
 }

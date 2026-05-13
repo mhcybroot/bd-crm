@@ -1,8 +1,10 @@
 package com.bdcrm.auth;
 
+import com.bdcrm.audit.AuditEventService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,14 +21,21 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final AuditEventService auditEventService;
 
     @PostMapping("/login")
     public AuthSessionResponse login(@Valid @RequestBody LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.username(), request.password()));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        AuthenticatedUser user = (AuthenticatedUser) authentication.getPrincipal();
-        return AuthSessionResponse.from(user.withToken(jwtService.generateToken(user)));
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.username(), request.password()));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            AuthenticatedUser user = (AuthenticatedUser) authentication.getPrincipal();
+            auditEventService.log(null, "LOGIN_SUCCESS", "USER", user.id(), "User logged in", "{\"username\":\"" + request.username() + "\"}");
+            return AuthSessionResponse.from(user.withToken(jwtService.generateToken(user)));
+        } catch (BadCredentialsException exception) {
+            auditEventService.log(null, "LOGIN_FAILURE", "USER", null, "Login failed", "{\"username\":\"" + request.username() + "\"}");
+            throw exception;
+        }
     }
 
     @GetMapping("/me")

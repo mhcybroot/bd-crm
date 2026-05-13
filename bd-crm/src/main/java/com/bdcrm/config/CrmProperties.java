@@ -8,6 +8,8 @@ public class CrmProperties {
     private Security security = new Security();
     private Escalation escalation = new Escalation();
     private Cors cors = new Cors();
+    private Attachments attachments = new Attachments();
+    private Notifications notifications = new Notifications();
 
     public Security getSecurity() {
         return security;
@@ -31,6 +33,22 @@ public class CrmProperties {
 
     public void setCors(Cors cors) {
         this.cors = cors;
+    }
+
+    public Attachments getAttachments() {
+        return attachments;
+    }
+
+    public void setAttachments(Attachments attachments) {
+        this.attachments = attachments;
+    }
+
+    public Notifications getNotifications() {
+        return notifications;
+    }
+
+    public void setNotifications(Notifications notifications) {
+        this.notifications = notifications;
     }
 
     public static class Security {
@@ -84,6 +102,48 @@ public class CrmProperties {
 
         public void setAllowedOrigins(String allowedOrigins) {
             this.allowedOrigins = allowedOrigins;
+        }
+    }
+
+    public static class Attachments {
+        private String storageRoot = "./storage";
+
+        public String getStorageRoot() {
+            return storageRoot;
+        }
+
+        public void setStorageRoot(String storageRoot) {
+            this.storageRoot = storageRoot;
+        }
+    }
+
+    public static class Notifications {
+        private int dueSoonHours = 24;
+        private boolean emailEnabled = false;
+        private String fromAddress = "noreply@bdcrm.local";
+
+        public int getDueSoonHours() {
+            return dueSoonHours;
+        }
+
+        public void setDueSoonHours(int dueSoonHours) {
+            this.dueSoonHours = dueSoonHours;
+        }
+
+        public boolean isEmailEnabled() {
+            return emailEnabled;
+        }
+
+        public void setEmailEnabled(boolean emailEnabled) {
+            this.emailEnabled = emailEnabled;
+        }
+
+        public String getFromAddress() {
+            return fromAddress;
+        }
+
+        public void setFromAddress(String fromAddress) {
+            this.fromAddress = fromAddress;
         }
     }
 }

@@ -1,10 +1,17 @@
 package com.bdcrm.lead;
 
 import com.bdcrm.auth.SecurityUtils;
+import com.bdcrm.attachment.AttachmentService;
 import com.bdcrm.common.ApiException;
 import com.bdcrm.common.PagedResponse;
+import com.bdcrm.communication.CommunicationService;
+import com.bdcrm.duplicate.DuplicateState;
 import com.bdcrm.followup.FollowupService;
 import com.bdcrm.followup.LeadFollowupResponse;
+import com.bdcrm.pipeline.LeadStageUpdateRequest;
+import com.bdcrm.pipeline.PipelineService;
+import com.bdcrm.qualification.LeadQualificationResponse;
+import com.bdcrm.qualification.QualificationService;
 import com.bdcrm.template.FollowupTemplate;
 import com.bdcrm.template.TemplateService;
 import com.bdcrm.user.User;
@@ -31,6 +38,10 @@ public class LeadService {
     private final FollowupService followupService;
     private final LeadActivityService leadActivityService;
     private final SecurityUtils securityUtils;
+    private final QualificationService qualificationService;
+    private final PipelineService pipelineService;
+    private final CommunicationService communicationService;
+    private final AttachmentService attachmentService;
 
     @Transactional
     public LeadDetailResponse createLead(LeadCreateRequest request) {
@@ -45,6 +56,8 @@ public class LeadService {
                 request.description(), request.priority(), assignedUser, template);
         lead = leadRepository.save(lead);
         followupService.syncFromTemplate(lead);
+        qualificationService.getOrCreateEntity(lead);
+        pipelineService.ensureLeadStage(lead, actor, "Lead created");
         leadActivityService.log(lead, actor, LeadActivityType.LEAD_CREATED, "Lead created");
         return getLead(lead.getId());
     }
@@ -62,6 +75,7 @@ public class LeadService {
                 request.description(), request.priority(), assignedUser, template);
         if (templateChanged || ownerChanged) {
             followupService.syncFromTemplate(lead);
+            pipelineService.ensureLeadStage(lead, securityUtils.currentUserEntity(), "Lead updated to template pipeline");
         }
         leadActivityService.log(lead, securityUtils.currentUserEntity(), LeadActivityType.LEAD_UPDATED, "Lead updated");
         return getLead(lead.getId());
@@ -100,7 +114,18 @@ public class LeadService {
         List<LeadActivityResponse> activities = leadActivityRepository.findByLeadIdOrderByCreatedAtDesc(leadId).stream()
                 .map(LeadActivityResponse::from)
                 .toList();
-        return new LeadDetailResponse(LeadSummaryResponse.from(lead), followups, notes, activities);
+        LeadQualificationResponse qualification = qualificationService.getResponse(lead);
+        return new LeadDetailResponse(
+                LeadSummaryResponse.from(lead),
+                followups,
+                notes,
+                activities,
+                qualification,
+                new LeadScoreSummaryResponse(qualification.fitScore(), qualification.engagementScore(), qualification.totalScore()),
+                pipelineService.historyForLead(leadId),
+                communicationService.listForLead(leadId),
+                attachmentService.listForLead(leadId),
+                attachmentService.documentsForLead(leadId));
     }
 
     @Transactional
@@ -123,6 +148,13 @@ public class LeadService {
         if (request.status() == LeadStatus.WON || request.status() == LeadStatus.LOST) {
             followupService.closeOpenFollowups(lead, actor, "Closed open follow-ups after lead moved to " + request.status());
         }
+        return getLead(leadId);
+    }
+
+    @Transactional
+    public LeadDetailResponse updateStage(Long leadId, LeadStageUpdateRequest request) {
+        Lead lead = requireVisibleLead(leadId);
+        pipelineService.moveLeadToStage(lead, pipelineService.requireStage(request.stageId()), securityUtils.currentUserEntity(), request.note());
         return getLead(leadId);
     }
 
@@ -159,9 +191,16 @@ public class LeadService {
         lead.setPriority(priority == null ? LeadPriority.MEDIUM : priority);
         lead.setAssignedUser(assignedUser);
         lead.setTemplate(template);
+        if (lead.getDuplicateState() == null) {
+            lead.setDuplicateState(DuplicateState.CLEAR);
+        }
     }
 
-    private Lead requireVisibleLead(Long leadId) {
+    public Lead requireVisibleLeadEntity(Long leadId) {
+        return requireVisibleLead(leadId);
+    }
+
+    Lead requireVisibleLead(Long leadId) {
         Lead lead = leadRepository.findById(leadId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Lead not found"));
         User currentUser = securityUtils.currentUserEntity();
@@ -174,5 +213,24 @@ public class LeadService {
     private User requireUser(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
+    }
+
+    @Transactional
+    public List<LeadSummaryResponse> bulkAction(BulkLeadActionRequest request) {
+        User actor = securityUtils.currentUserEntity();
+        List<Lead> leads = request.leadIds().stream().map(this::requireVisibleLead).toList();
+        for (Lead lead : leads) {
+            if (request.assignedUserId() != null) {
+                lead.setAssignedUser(requireUser(request.assignedUserId()));
+            }
+            if (request.status() != null) {
+                lead.setStatus(request.status());
+            }
+            if (request.stageId() != null) {
+                pipelineService.moveLeadToStage(lead, pipelineService.requireStage(request.stageId()), actor, "Bulk lead action");
+            }
+            leadActivityService.log(lead, actor, LeadActivityType.LEAD_UPDATED, "Bulk lead action applied");
+        }
+        return leads.stream().map(LeadSummaryResponse::from).toList();
     }
 }

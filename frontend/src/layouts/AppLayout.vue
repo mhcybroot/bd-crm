@@ -1,14 +1,23 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
-import type { RoleName } from '@/types/api'
+import * as notificationApi from '@/api/notifications'
+import * as searchApi from '@/api/search'
+import type { NotificationResponse, RoleName, SearchItem } from '@/types/api'
 
 const drawer = ref(true)
 const router = useRouter()
 const authStore = useAuthStore()
 const uiStore = useUiStore()
+const notifications = ref<NotificationResponse[]>([])
+const notificationMenu = ref(false)
+const search = ref('')
+const searchResults = ref<SearchItem[]>([])
+const searchLoading = ref(false)
+const searchOpen = ref(false)
+let searchDebounce: number | undefined
 
 type NavItem = {
   title: string
@@ -20,8 +29,11 @@ type NavItem = {
 const navItems = computed(() =>
   ([
     { title: 'Dashboard', to: '/dashboard', icon: 'mdi-view-dashboard-outline' },
+    { title: 'Command Center', to: '/command-center', icon: 'mdi-flash-outline' },
     { title: 'Leads', to: '/leads', icon: 'mdi-domain' },
     { title: 'Follow-ups', to: '/followups', icon: 'mdi-calendar-clock-outline' },
+    { title: 'Pipeline Board', to: '/board', icon: 'mdi-view-kanban-outline' },
+    { title: 'Duplicates', to: '/duplicates', icon: 'mdi-content-copy', roles: ['ADMIN', 'MANAGER'] },
     { title: 'Templates', to: '/templates', icon: 'mdi-timeline-outline', roles: ['ADMIN'] },
     { title: 'Reports', to: '/reports', icon: 'mdi-chart-bar', roles: ['ADMIN', 'MANAGER'] },
     { title: 'Users', to: '/users', icon: 'mdi-account-group-outline', roles: ['ADMIN'] },
@@ -32,6 +44,38 @@ async function handleLogout() {
   authStore.logout()
   await router.push('/login')
 }
+
+async function loadNotifications() {
+  notifications.value = await notificationApi.listNotifications().catch(() => [])
+}
+
+async function runSearch() {
+  window.clearTimeout(searchDebounce)
+  searchDebounce = window.setTimeout(async () => {
+    const query = search.value.trim()
+    if (!query) {
+      searchResults.value = []
+      searchOpen.value = false
+      return
+    }
+    searchLoading.value = true
+    const response = await searchApi.globalSearch({ q: query }).catch(() => null)
+    searchResults.value = response ? [...response.leads, ...response.notes, ...response.activities, ...response.followups].slice(0, 8) : []
+    searchOpen.value = searchResults.value.length > 0
+    searchLoading.value = false
+  }, 250)
+}
+
+async function openResult(item: SearchItem) {
+  search.value = ''
+  searchResults.value = []
+  searchOpen.value = false
+  if (item.leadId) {
+    await router.push(`/leads/${item.leadId}`)
+  }
+}
+
+onMounted(loadNotifications)
 </script>
 
 <template>
@@ -56,7 +100,52 @@ async function handleLogout() {
     <v-app-bar flat color="transparent">
       <v-app-bar-nav-icon @click="drawer = !drawer" />
       <v-toolbar-title>BD CRM Workspace</v-toolbar-title>
+      <div class="mx-4" style="width: 360px; position: relative;">
+        <v-text-field
+          v-model="search"
+          density="comfortable"
+          hide-details
+          variant="outlined"
+          placeholder="Search leads, notes, follow-ups"
+          prepend-inner-icon="mdi-magnify"
+          @update:model-value="runSearch"
+          @focus="searchOpen = searchResults.length > 0"
+        />
+        <v-card
+          v-if="searchOpen"
+          elevation="8"
+          style="position: absolute; top: 56px; left: 0; right: 0; z-index: 2000;"
+        >
+          <v-list>
+            <v-list-item v-if="searchLoading" title="Searching..." />
+            <v-list-item
+              v-for="item in searchResults"
+              :key="`${item.type}-${item.id}`"
+              :title="item.title"
+              :subtitle="item.subtitle || item.type"
+              @click="openResult(item)"
+            />
+            <v-list-item v-if="!searchLoading && !searchResults.length" title="No results found" />
+          </v-list>
+        </v-card>
+      </div>
       <v-spacer />
+      <v-menu v-model="notificationMenu" location="bottom end">
+        <template #activator="{ props }">
+          <v-btn icon="mdi-bell-outline" variant="text" v-bind="props" />
+        </template>
+        <v-card min-width="360">
+          <v-list>
+            <v-list-item
+              v-for="notification in notifications.slice(0, 6)"
+              :key="notification.id"
+              :title="notification.title"
+              :subtitle="notification.message"
+            />
+            <v-list-item v-if="!notifications.length" title="No notifications yet" />
+          </v-list>
+        </v-card>
+      </v-menu>
       <div class="text-right mr-4">
         <div class="text-body-2 font-weight-medium">{{ authStore.user?.fullName }}</div>
         <div class="text-caption text-medium-emphasis">{{ authStore.user?.roles.join(', ') }}</div>

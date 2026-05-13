@@ -1,6 +1,8 @@
 package com.bdcrm.lead;
 
 import com.bdcrm.common.BaseEntity;
+import com.bdcrm.duplicate.DuplicateState;
+import com.bdcrm.pipeline.TemplatePipelineStage;
 import com.bdcrm.template.FollowupTemplate;
 import com.bdcrm.user.User;
 import jakarta.persistence.Column;
@@ -45,6 +47,17 @@ public class Lead extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
     private LeadPriority priority = LeadPriority.MEDIUM;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "current_stage_id")
+    private TemplatePipelineStage currentStage;
+
+    @Column(name = "merged_into_lead_id")
+    private Long mergedIntoLeadId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "duplicate_state", nullable = false, length = 32)
+    private DuplicateState duplicateState = DuplicateState.CLEAR;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_user_id", nullable = false)

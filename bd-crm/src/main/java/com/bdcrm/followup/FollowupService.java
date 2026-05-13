@@ -161,6 +161,19 @@ public class FollowupService {
     }
 
     @Transactional
+    public List<LeadFollowupResponse> bulkAction(BulkFollowupActionRequest request) {
+        return request.followupIds().stream().map(id -> {
+            return switch ((request.action() == null ? "" : request.action().toLowerCase())) {
+                case "complete" -> complete(id, new FollowupActionRequest(null, FollowupOutcome.NO_RESPONSE, null, request.notes()));
+                case "skip" -> skip(id, new FollowupActionRequest(null, null, null, request.notes()));
+                case "reschedule" -> reschedule(id, new FollowupActionRequest(request.dueDate(), null, null, request.notes()));
+                case "reassign" -> reassign(id, new FollowupActionRequest(null, null, request.assignedUserId(), request.notes()));
+                default -> throw new ApiException(HttpStatus.BAD_REQUEST, "Unsupported bulk follow-up action");
+            };
+        }).toList();
+    }
+
+    @Transactional
     public void closeOpenFollowups(Lead lead, User actor, String reason) {
         List<LeadFollowup> openFollowups = leadFollowupRepository.findByLeadIdOrderByStepNumberAsc(lead.getId()).stream()
                 .filter(followup -> followup.getStatus() == FollowupStatus.DUE || followup.getStatus() == FollowupStatus.OVERDUE)

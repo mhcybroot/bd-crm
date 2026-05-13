@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
+import com.bdcrm.pipeline.StageDefinitionRequest;
 import java.util.List;
 
 public record FollowupTemplateRequest(
@@ -11,5 +12,6 @@ public record FollowupTemplateRequest(
         @Size(max = 500) String description,
         boolean isDefault,
         boolean active,
-        @Valid @NotEmpty List<TemplateStepRequest> steps) {
+        @Valid @NotEmpty List<TemplateStepRequest> steps,
+        @Valid @NotEmpty List<StageDefinitionRequest> stages) {
 }

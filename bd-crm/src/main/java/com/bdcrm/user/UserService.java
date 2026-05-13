@@ -1,5 +1,7 @@
 package com.bdcrm.user;
 
+import com.bdcrm.audit.AuditEventService;
+import com.bdcrm.auth.SecurityUtils;
 import com.bdcrm.common.ApiException;
 import java.util.HashSet;
 import java.util.List;
@@ -16,6 +18,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditEventService auditEventService;
+    private final SecurityUtils securityUtils;
 
     @Transactional(readOnly = true)
     public List<UserResponse> listUsers() {
@@ -37,13 +41,16 @@ public class UserService {
         if (request.managerId() != null) {
             user.setManager(requireUser(request.managerId()));
         }
-        return UserResponse.from(userRepository.save(user));
+        user = userRepository.save(user);
+        auditEventService.log(securityUtils.currentUserEntity(), "USER_CREATED", "USER", user.getId(), "Created user " + user.getUsername(), null);
+        return UserResponse.from(user);
     }
 
     @Transactional
     public UserResponse updateRoles(Long userId, UserRoleUpdateRequest request) {
         User user = requireUser(userId);
         user.setRoles(new HashSet<>(loadRoles(request.roles())));
+        auditEventService.log(securityUtils.currentUserEntity(), "USER_ROLES_UPDATED", "USER", user.getId(), "Updated user roles", null);
         return UserResponse.from(user);
     }
 
@@ -51,6 +58,7 @@ public class UserService {
     public UserResponse updateStatus(Long userId, UserStatusUpdateRequest request) {
         User user = requireUser(userId);
         user.setActive(request.active());
+        auditEventService.log(securityUtils.currentUserEntity(), "USER_STATUS_UPDATED", "USER", user.getId(), "Updated user active status", null);
         return UserResponse.from(user);
     }
 

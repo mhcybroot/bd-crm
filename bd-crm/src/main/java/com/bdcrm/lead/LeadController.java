@@ -1,7 +1,9 @@
 package com.bdcrm.lead;
 
 import com.bdcrm.common.PagedResponse;
+import com.bdcrm.pipeline.LeadStageUpdateRequest;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -55,8 +57,18 @@ public class LeadController {
         return leadService.updateStatus(leadId, request);
     }
 
+    @PatchMapping("/{leadId}/stage")
+    public LeadDetailResponse updateStage(@PathVariable Long leadId, @Valid @RequestBody LeadStageUpdateRequest request) {
+        return leadService.updateStage(leadId, request);
+    }
+
     @PostMapping("/{leadId}/notes")
     public LeadNoteResponse addNote(@PathVariable Long leadId, @Valid @RequestBody LeadNoteRequest request) {
         return leadService.addNote(leadId, request);
+    }
+
+    @PostMapping("/bulk")
+    public List<LeadSummaryResponse> bulkAction(@Valid @RequestBody BulkLeadActionRequest request) {
+        return leadService.bulkAction(request);
     }
 }

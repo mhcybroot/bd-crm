@@ -3,6 +3,8 @@ export type LeadStatus = 'NEW' | 'IN_PROGRESS' | 'QUALIFIED' | 'WON' | 'LOST' | 
 export type LeadPriority = 'LOW' | 'MEDIUM' | 'HIGH'
 export type FollowupStatus = 'DUE' | 'OVERDUE' | 'COMPLETED' | 'SKIPPED' | 'CANCELLED'
 export type ContactChannel = 'CALL' | 'EMAIL' | 'WHATSAPP' | 'LINKEDIN' | 'MEETING'
+export type DuplicateState = 'CLEAR' | 'SUSPECTED' | 'REVIEWED' | 'MERGED'
+export type DocumentStatus = 'DRAFT' | 'SENT' | 'VIEWED' | 'SIGNED' | 'ARCHIVED'
 export type FollowupOutcome =
   | 'NO_RESPONSE'
   | 'INTERESTED'
@@ -54,6 +56,9 @@ export interface LeadSummaryResponse {
   assignedUserName: string
   templateId: number
   templateName: string
+  currentStageId: number | null
+  currentStageName: string | null
+  duplicateState: DuplicateState
 }
 
 export interface LeadNoteResponse {
@@ -71,6 +76,67 @@ export interface LeadActivityResponse {
   actorId: number
   actorName: string
   createdAt: string
+}
+
+export interface LeadQualificationResponse {
+  id: number
+  budgetRange: string | null
+  authorityLevel: string | null
+  needSummary: string | null
+  timelineTarget: string | null
+  fitScore: number
+  engagementScore: number
+  totalScore: number
+  qualificationNotes: string | null
+  updatedByUserId: number | null
+  updatedByUserName: string | null
+  qualificationUpdatedAt: string | null
+}
+
+export interface LeadScoreSummaryResponse {
+  fitScore: number
+  engagementScore: number
+  totalScore: number
+}
+
+export interface LeadStageHistoryResponse {
+  id: number
+  stageId: number
+  stageName: string
+  changedByUserId: number
+  changedByUserName: string
+  changeNote: string | null
+  enteredAt: string
+  exitedAt: string | null
+}
+
+export interface LeadCommunicationResponse {
+  id: number
+  channel: ContactChannel
+  subject: string | null
+  body: string | null
+  outcome: string | null
+  occurredAt: string
+  actorId: number
+  actorName: string
+}
+
+export interface AttachmentUploadResponse {
+  id: number
+  originalFileName: string
+  contentType: string | null
+  fileSize: number
+  checksum: string
+  uploadedByUserId: number
+  uploadedByUserName: string
+  createdAt: string
+}
+
+export interface DocumentLifecycleResponse {
+  id: number
+  attachmentId: number
+  title: string
+  status: DocumentStatus
 }
 
 export interface LeadFollowupResponse {
@@ -93,6 +159,12 @@ export interface LeadDetailResponse {
   followups: LeadFollowupResponse[]
   notes: LeadNoteResponse[]
   activities: LeadActivityResponse[]
+  qualification: LeadQualificationResponse
+  score: LeadScoreSummaryResponse
+  stageHistory: LeadStageHistoryResponse[]
+  communications: LeadCommunicationResponse[]
+  attachments: AttachmentUploadResponse[]
+  documents: DocumentLifecycleResponse[]
 }
 
 export interface DashboardSummaryResponse {
@@ -129,6 +201,14 @@ export interface TemplateStepResponse {
   instructions: string | null
 }
 
+export interface StageDefinitionResponse {
+  id: number
+  name: string
+  stageOrder: number
+  slaHours: number
+  exitAutomation: string | null
+}
+
 export interface FollowupTemplateResponse {
   id: number
   name: string
@@ -136,6 +216,7 @@ export interface FollowupTemplateResponse {
   isDefault: boolean
   active: boolean
   steps: TemplateStepResponse[]
+  stages: StageDefinitionResponse[]
 }
 
 export interface UserResponse {
@@ -210,6 +291,82 @@ export interface ReportFilters {
   sortDirection?: 'ASC' | 'DESC'
 }
 
+export interface PipelineBoardColumnResponse {
+  stageId: number
+  stageName: string
+  slaHours: number
+  leadCount: number
+  leads: LeadSummaryResponse[]
+}
+
+export interface PipelineBoardResponse {
+  templateId: number
+  templateName: string
+  columns: PipelineBoardColumnResponse[]
+}
+
+export interface NotificationResponse {
+  id: number
+  type: string
+  title: string
+  message: string
+  actionUrl: string | null
+  leadId: number | null
+  followupId: number | null
+  readAt: string | null
+  createdAt: string
+}
+
+export interface NotificationPreferenceResponse {
+  inAppEnabled: boolean
+  emailEnabled: boolean
+}
+
+export interface DuplicateCandidateResponse {
+  id: number
+  leadId: number
+  leadCompanyName: string
+  matchedLeadId: number
+  matchedLeadCompanyName: string
+  matchScore: number
+  state: DuplicateState
+  reason: string | null
+}
+
+export interface SavedViewResponse {
+  id: number
+  pageKey: string
+  name: string
+  shared: boolean
+  configJson: string
+  ownerUserId: number
+  ownerUserName: string
+}
+
+export interface SearchItem {
+  type: string
+  id: number
+  leadId: number | null
+  title: string
+  subtitle: string | null
+}
+
+export interface GlobalSearchResponse {
+  leads: SearchItem[]
+  notes: SearchItem[]
+  activities: SearchItem[]
+  followups: SearchItem[]
+  attachments: SearchItem[]
+}
+
+export interface CommandCenterResponse {
+  notifications: NotificationResponse[]
+  dueFollowups: LeadFollowupResponse[]
+  overdueFollowups: LeadFollowupResponse[]
+  duplicates: DuplicateCandidateResponse[]
+  recommendations: string[]
+}
+
 export interface LoginRequest {
   username: string
   password: string
@@ -227,12 +384,35 @@ export interface LeadRequest {
   templateId: number | null
 }
 
+export interface LeadQualificationRequest {
+  budgetRange: string | null
+  authorityLevel: string | null
+  needSummary: string | null
+  timelineTarget: string | null
+  fitScore: number
+  engagementScore: number
+  qualificationNotes: string | null
+}
+
+export interface LeadCommunicationRequest {
+  channel: ContactChannel
+  subject: string | null
+  body: string | null
+  outcome: string | null
+  occurredAt: string | null
+}
+
 export interface LeadAssignmentRequest {
   assignedUserId: number
 }
 
 export interface LeadStatusUpdateRequest {
   status: LeadStatus
+}
+
+export interface LeadStageUpdateRequest {
+  stageId: number
+  note?: string | null
 }
 
 export interface LeadNoteRequest {
@@ -253,12 +433,77 @@ export interface TemplateStepRequest {
   instructions: string
 }
 
+export interface StageDefinitionRequest {
+  name: string
+  stageOrder: number
+  slaHours: number
+  exitAutomation: string
+}
+
 export interface FollowupTemplateRequest {
   name: string
   description: string
   isDefault: boolean
   active: boolean
   steps: TemplateStepRequest[]
+  stages: StageDefinitionRequest[]
+}
+
+export interface NotificationPreferenceRequest {
+  inAppEnabled: boolean
+  emailEnabled: boolean
+}
+
+export interface DocumentLifecycleRequest {
+  title: string
+  status: DocumentStatus
+}
+
+export interface SavedViewRequest {
+  pageKey: string
+  name: string
+  shared: boolean
+  configJson: string
+}
+
+export interface LeadMergeRequest {
+  sourceLeadId: number
+  targetLeadId: number
+  summary: string | null
+}
+
+export interface BulkLeadActionRequest {
+  leadIds: number[]
+  assignedUserId?: number | null
+  status?: LeadStatus | null
+  stageId?: number | null
+}
+
+export interface BulkFollowupActionRequest {
+  followupIds: number[]
+  action: string
+  dueDate?: string | null
+  assignedUserId?: number | null
+  notes?: string | null
+}
+
+export interface LeadImportPreviewResponse {
+  totalRows: number
+  rows: Array<{
+    rowNumber: number
+    companyName: string
+    contactName: string
+    email: string | null
+    phone: string | null
+    duplicateSuspected: boolean
+  }>
+  warnings: string[]
+}
+
+export interface LeadImportResultResponse {
+  createdCount: number
+  duplicateCount: number
+  errors: string[]
 }
 
 export interface UserCreateRequest {

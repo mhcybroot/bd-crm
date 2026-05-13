@@ -12,6 +12,14 @@ const statusFilter = ref('open')
 const loading = ref(true)
 const followups = ref<LeadFollowupResponse[]>([])
 const users = ref<UserResponse[]>([])
+const bulkDialog = ref(false)
+const bulk = reactive({
+  followupIds: [] as number[],
+  action: 'skip',
+  dueDate: '',
+  assignedUserId: null as number | null,
+  notes: '',
+})
 const dialog = reactive({
   open: false,
   mode: 'complete' as 'complete' | 'reschedule' | 'skip' | 'reassign',
@@ -71,6 +79,19 @@ async function submitAction() {
     uiStore.showError(error instanceof Error ? error.message : 'Unable to update follow-up')
   }
 }
+
+async function submitBulkAction() {
+  await followupApi.bulkFollowupAction({
+    followupIds: bulk.followupIds,
+    action: bulk.action,
+    dueDate: bulk.dueDate || null,
+    assignedUserId: bulk.assignedUserId,
+    notes: bulk.notes,
+  })
+  bulkDialog.value = false
+  uiStore.showSuccess('Bulk follow-up action applied')
+  await load()
+}
 </script>
 
 <template>
@@ -80,7 +101,10 @@ async function submitAction() {
         <h1 class="page-title">Follow-up Queue</h1>
         <p class="page-subtitle">Work the open cadence, handle overdue items, and keep ownership clear.</p>
       </div>
-      <v-select v-model="statusFilter" label="Queue" :items="['open', 'due', 'overdue', 'upcoming', 'completed']" max-width="180" />
+      <div class="d-flex ga-2">
+        <v-select v-model="statusFilter" label="Queue" :items="['open', 'due', 'overdue', 'upcoming', 'completed']" max-width="180" />
+        <v-btn variant="tonal" color="primary" @click="bulkDialog = true">Bulk action</v-btn>
+      </div>
     </div>
 
     <v-card>
@@ -145,6 +169,24 @@ async function submitAction() {
           <v-spacer />
           <v-btn variant="text" @click="dialog.open = false">Cancel</v-btn>
           <v-btn color="primary" @click="submitAction">Save</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="bulkDialog" max-width="640">
+      <v-card>
+        <v-card-title>Bulk Follow-up Action</v-card-title>
+        <v-card-text>
+          <v-select v-model="bulk.followupIds" label="Follow-ups" :items="followups" item-title="stepNumber" item-value="id" multiple chips />
+          <v-select v-model="bulk.action" label="Action" :items="['skip', 'reschedule', 'reassign']" />
+          <v-text-field v-if="bulk.action === 'reschedule'" v-model="bulk.dueDate" type="date" label="New due date" />
+          <v-select v-if="bulk.action === 'reassign'" v-model="bulk.assignedUserId" label="Assign to" :items="users" item-title="fullName" item-value="id" />
+          <v-textarea v-model="bulk.notes" label="Notes" rows="3" />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="bulkDialog = false">Cancel</v-btn>
+          <v-btn color="primary" @click="submitBulkAction">Apply</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

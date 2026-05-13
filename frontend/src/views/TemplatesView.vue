@@ -14,6 +14,11 @@ const form = reactive<FollowupTemplateRequest>({
   isDefault: false,
   active: true,
   steps: [{ stepNumber: 1, dayOffset: 0, channel: 'CALL', instructions: '' }],
+  stages: [
+    { name: 'Prospecting', stageOrder: 1, slaHours: 48, exitAutomation: 'START_FIRST_TOUCH' },
+    { name: 'Contacted', stageOrder: 2, slaHours: 72, exitAutomation: 'FOLLOWUP_REMINDER' },
+    { name: 'Qualified', stageOrder: 3, slaHours: 72, exitAutomation: 'RECOMMEND_MEETING' },
+  ],
 })
 
 async function load() {
@@ -28,7 +33,21 @@ function resetForm() {
     isDefault: false,
     active: true,
     steps: [{ stepNumber: 1, dayOffset: 0, channel: 'CALL' as ContactChannel, instructions: '' }],
+    stages: [
+      { name: 'Prospecting', stageOrder: 1, slaHours: 48, exitAutomation: 'START_FIRST_TOUCH' },
+      { name: 'Contacted', stageOrder: 2, slaHours: 72, exitAutomation: 'FOLLOWUP_REMINDER' },
+      { name: 'Qualified', stageOrder: 3, slaHours: 72, exitAutomation: 'RECOMMEND_MEETING' },
+    ],
   })
+}
+
+function normalizeStages(template: FollowupTemplateResponse) {
+  if (template.stages?.length) return template.stages
+  return [
+    { id: 0, name: 'Prospecting', stageOrder: 1, slaHours: 48, exitAutomation: 'START_FIRST_TOUCH' },
+    { id: 0, name: 'Contacted', stageOrder: 2, slaHours: 72, exitAutomation: 'FOLLOWUP_REMINDER' },
+    { id: 0, name: 'Qualified', stageOrder: 3, slaHours: 72, exitAutomation: 'RECOMMEND_MEETING' },
+  ]
 }
 
 function editTemplate(template: FollowupTemplateResponse) {
@@ -43,6 +62,12 @@ function editTemplate(template: FollowupTemplateResponse) {
       dayOffset: step.dayOffset,
       channel: step.channel,
       instructions: step.instructions || '',
+    })),
+    stages: normalizeStages(template).map((stage) => ({
+      name: stage.name,
+      stageOrder: stage.stageOrder,
+      slaHours: stage.slaHours,
+      exitAutomation: stage.exitAutomation || '',
     })),
   })
   dialog.value = true
@@ -61,6 +86,20 @@ function addStep() {
 function removeStep(index: number) {
   form.steps.splice(index, 1)
   form.steps.forEach((step, position) => { step.stepNumber = position + 1 })
+}
+
+function addStage() {
+  form.stages.push({
+    name: `Stage ${form.stages.length + 1}`,
+    stageOrder: form.stages.length + 1,
+    slaHours: 72,
+    exitAutomation: '',
+  })
+}
+
+function removeStage(index: number) {
+  form.stages.splice(index, 1)
+  form.stages.forEach((stage, position) => { stage.stageOrder = position + 1 })
 }
 
 async function submit() {
@@ -124,6 +163,18 @@ onMounted(load)
             </tbody>
           </v-table>
           <div class="mt-4">
+            <div class="text-subtitle-2 mb-2">Pipeline stages</div>
+            <v-chip
+              v-for="stage in normalizeStages(template)"
+              :key="`${template.id}-${stage.stageOrder}`"
+              size="small"
+              variant="tonal"
+              class="mr-2 mb-2"
+            >
+              {{ stage.stageOrder }}. {{ stage.name }}
+            </v-chip>
+          </div>
+          <div class="mt-4">
             <v-btn variant="outlined" @click="editTemplate(template)">Edit</v-btn>
           </div>
         </v-card>
@@ -152,6 +203,19 @@ onMounted(load)
             <v-col cols="12" md="3"><v-text-field v-model="step.instructions" label="Instructions" /></v-col>
             <v-col cols="12" md="1" class="d-flex align-center">
               <v-btn icon="mdi-delete-outline" variant="text" :disabled="form.steps.length === 1" @click="removeStep(index)" />
+            </v-col>
+          </v-row>
+          <div class="d-flex justify-space-between align-center mt-6 mb-3">
+            <div class="text-subtitle-1">Pipeline stages</div>
+            <v-btn variant="text" color="primary" @click="addStage">Add stage</v-btn>
+          </div>
+          <v-row v-for="(stage, index) in form.stages" :key="`stage-${index}`" class="mb-1">
+            <v-col cols="12" md="3"><v-text-field v-model="stage.name" label="Stage name" /></v-col>
+            <v-col cols="12" md="2"><v-text-field v-model.number="stage.stageOrder" label="Order" type="number" disabled /></v-col>
+            <v-col cols="12" md="3"><v-text-field v-model.number="stage.slaHours" label="SLA hours" type="number" /></v-col>
+            <v-col cols="12" md="3"><v-text-field v-model="stage.exitAutomation" label="Automation hook" /></v-col>
+            <v-col cols="12" md="1" class="d-flex align-center">
+              <v-btn icon="mdi-delete-outline" variant="text" :disabled="form.stages.length === 1" @click="removeStage(index)" />
             </v-col>
           </v-row>
         </v-card-text>

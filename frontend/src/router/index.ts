@@ -11,6 +11,9 @@ import TemplatesView from '@/views/TemplatesView.vue'
 import ReportsView from '@/views/ReportsView.vue'
 import UsersView from '@/views/UsersView.vue'
 import UnauthorizedView from '@/views/UnauthorizedView.vue'
+import CommandCenterView from '@/views/CommandCenterView.vue'
+import PipelineBoardView from '@/views/PipelineBoardView.vue'
+import DuplicatesView from '@/views/DuplicatesView.vue'
 import AppLayout from '@/layouts/AppLayout.vue'
 
 declare module 'vue-router' {
@@ -32,11 +35,14 @@ const router = createRouter({
       redirect: '/dashboard',
       children: [
         { path: 'dashboard', component: DashboardView },
+        { path: 'command-center', component: CommandCenterView },
         { path: 'leads', component: LeadsView },
         { path: 'leads/new', component: LeadFormView },
         { path: 'leads/:id', component: LeadDetailView },
         { path: 'leads/:id/edit', component: LeadFormView },
         { path: 'followups', component: FollowupsView },
+        { path: 'board', component: PipelineBoardView },
+        { path: 'duplicates', component: DuplicatesView, meta: { roles: ['ADMIN', 'MANAGER'] } },
         { path: 'templates', component: TemplatesView, meta: { roles: ['ADMIN'] } },
         { path: 'reports', component: ReportsView, meta: { roles: ['ADMIN', 'MANAGER'] } },
         { path: 'users', component: UsersView, meta: { roles: ['ADMIN'] } },

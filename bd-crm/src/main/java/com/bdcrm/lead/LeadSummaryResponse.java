@@ -1,5 +1,7 @@
 package com.bdcrm.lead;
 
+import com.bdcrm.duplicate.DuplicateState;
+
 public record LeadSummaryResponse(
         Long id,
         String companyName,
@@ -12,7 +14,10 @@ public record LeadSummaryResponse(
         Long assignedUserId,
         String assignedUserName,
         Long templateId,
-        String templateName) {
+        String templateName,
+        Long currentStageId,
+        String currentStageName,
+        DuplicateState duplicateState) {
 
     public static LeadSummaryResponse from(Lead lead) {
         return new LeadSummaryResponse(
@@ -27,6 +32,9 @@ public record LeadSummaryResponse(
                 lead.getAssignedUser().getId(),
                 lead.getAssignedUser().getFullName(),
                 lead.getTemplate().getId(),
-                lead.getTemplate().getName());
+                lead.getTemplate().getName(),
+                lead.getCurrentStage() != null ? lead.getCurrentStage().getId() : null,
+                lead.getCurrentStage() != null ? lead.getCurrentStage().getName() : null,
+                lead.getDuplicateState());
     }
 }

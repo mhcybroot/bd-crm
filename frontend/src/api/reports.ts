@@ -20,3 +20,8 @@ export async function getOutcomeSummary(filters: ReportFilters) {
   const { data } = await http.get<OutcomeSummaryResponse>('/api/reports/outcomes', { params: filters })
   return data
 }
+
+export async function exportReportCsv(filters: ReportFilters) {
+  const { data } = await http.get<string>('/api/exports/reports', { params: filters, responseType: 'text' as const })
+  return data
+}

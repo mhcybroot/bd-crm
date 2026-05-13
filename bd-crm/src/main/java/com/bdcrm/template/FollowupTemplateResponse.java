@@ -1,5 +1,6 @@
 package com.bdcrm.template;
 
+import com.bdcrm.pipeline.StageDefinitionResponse;
 import java.util.List;
 
 public record FollowupTemplateResponse(
@@ -8,7 +9,8 @@ public record FollowupTemplateResponse(
         String description,
         boolean isDefault,
         boolean active,
-        List<TemplateStepResponse> steps) {
+        List<TemplateStepResponse> steps,
+        List<StageDefinitionResponse> stages) {
 
     public static FollowupTemplateResponse from(FollowupTemplate template) {
         return new FollowupTemplateResponse(
@@ -17,6 +19,7 @@ public record FollowupTemplateResponse(
                 template.getDescription(),
                 template.isDefault(),
                 template.isActive(),
-                template.getSteps().stream().map(TemplateStepResponse::from).toList());
+                template.getSteps().stream().map(TemplateStepResponse::from).toList(),
+                template.getPipelineStages().stream().map(StageDefinitionResponse::from).toList());
     }
 }

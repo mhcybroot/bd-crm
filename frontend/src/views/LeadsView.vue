@@ -1,18 +1,29 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import * as exportApi from '@/api/export'
+import * as importApi from '@/api/imports'
 import * as leadApi from '@/api/leads'
 import * as userApi from '@/api/users'
 import AppEmptyState from '@/components/common/AppEmptyState.vue'
 import StatusChip from '@/components/common/StatusChip.vue'
+import { useUiStore } from '@/stores/ui'
 import type { LeadStatus, LeadSummaryResponse, UserResponse } from '@/types/api'
 
 const router = useRouter()
+const uiStore = useUiStore()
 const loading = ref(true)
 const leads = ref<LeadSummaryResponse[]>([])
 const users = ref<UserResponse[]>([])
 const totalPages = ref(0)
 const totalElements = ref(0)
+const importFile = ref<File | null>(null)
+const bulkDialog = ref(false)
+const bulk = reactive({
+  leadIds: [] as number[],
+  assignedUserId: null as number | null,
+  status: '' as LeadStatus | '',
+})
 const filters = reactive({
   page: 1,
   size: 10,
@@ -61,6 +72,36 @@ watch(
 onMounted(async () => {
   await Promise.all([loadUsers(), loadLeads()])
 })
+
+async function exportCsv() {
+  await exportApi.exportLeadsCsv()
+  uiStore.showSuccess('Lead CSV export generated')
+}
+
+async function previewImport(files: File | File[] | null) {
+  importFile.value = Array.isArray(files) ? files[0] ?? null : files
+  if (!importFile.value) return
+  const preview = await importApi.previewLeadImport(importFile.value)
+  uiStore.showSuccess(`Import preview ready for ${preview.totalRows} rows`)
+}
+
+async function runImport() {
+  if (!importFile.value) return
+  const result = await importApi.importLeads(importFile.value)
+  uiStore.showSuccess(`Imported ${result.createdCount} leads`)
+  await loadLeads()
+}
+
+async function applyBulkAction() {
+  await leadApi.bulkLeadAction({
+    leadIds: bulk.leadIds,
+    assignedUserId: bulk.assignedUserId,
+    status: bulk.status || null,
+  })
+  bulkDialog.value = false
+  uiStore.showSuccess('Bulk lead action applied')
+  await loadLeads()
+}
 </script>
 
 <template>
@@ -70,7 +111,13 @@ onMounted(async () => {
         <h1 class="page-title">Leads</h1>
         <p class="page-subtitle">Search, filter, and manage the pipeline from first contact to close.</p>
       </div>
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="router.push('/leads/new')">New lead</v-btn>
+      <div class="d-flex ga-2">
+        <v-file-input density="comfortable" hide-details label="Import CSV" max-width="220" @update:model-value="previewImport" />
+        <v-btn variant="tonal" color="secondary" @click="runImport">Run import</v-btn>
+        <v-btn variant="tonal" color="secondary" @click="exportCsv">Export CSV</v-btn>
+        <v-btn variant="tonal" color="primary" @click="bulkDialog = true">Bulk action</v-btn>
+        <v-btn color="primary" prepend-icon="mdi-plus" @click="router.push('/leads/new')">New lead</v-btn>
+      </div>
     </div>
 
     <v-card class="mb-4">
@@ -142,5 +189,21 @@ onMounted(async () => {
         </template>
       </v-data-table>
     </v-card>
+
+    <v-dialog v-model="bulkDialog" max-width="720">
+      <v-card>
+        <v-card-title>Bulk Lead Action</v-card-title>
+        <v-card-text>
+          <v-select v-model="bulk.leadIds" label="Leads" :items="leads" item-title="companyName" item-value="id" chips multiple />
+          <v-select v-model="bulk.assignedUserId" label="Assign to" :items="users" item-title="fullName" item-value="id" clearable />
+          <v-select v-model="bulk.status" label="Status" :items="['', 'NEW', 'IN_PROGRESS', 'QUALIFIED', 'WON', 'LOST', 'DORMANT']" />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="bulkDialog = false">Cancel</v-btn>
+          <v-btn color="primary" @click="applyBulkAction">Apply</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>

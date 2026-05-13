@@ -42,4 +42,9 @@ public class FollowupController {
     public LeadFollowupResponse reassign(@PathVariable Long followupId, @Valid @RequestBody FollowupActionRequest request) {
         return followupService.reassign(followupId, request);
     }
+
+    @PatchMapping("/bulk")
+    public List<LeadFollowupResponse> bulk(@Valid @RequestBody BulkFollowupActionRequest request) {
+        return followupService.bulkAction(request);
+    }
 }

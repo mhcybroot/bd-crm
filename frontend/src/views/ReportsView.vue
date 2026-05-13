@@ -3,17 +3,22 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { Bar, Doughnut, Line } from 'vue-chartjs'
 import { ArcElement, BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, LineElement, PointElement, Tooltip } from 'chart.js'
 import * as reportApi from '@/api/reports'
+import * as savedViewApi from '@/api/savedViews'
 import * as userApi from '@/api/users'
 import * as templateApi from '@/api/templates'
-import type { FollowupTemplateResponse, ReportFilters, ReportsOverviewResponse, UserResponse } from '@/types/api'
+import { useUiStore } from '@/stores/ui'
+import type { FollowupTemplateResponse, ReportFilters, ReportsOverviewResponse, SavedViewResponse, UserResponse } from '@/types/api'
 import { titleCase } from '@/utils/formatters'
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, Legend, LinearScale, Tooltip, LineElement, PointElement)
 
 const loading = ref(false)
+const uiStore = useUiStore()
 const overview = ref<ReportsOverviewResponse | null>(null)
 const users = ref<UserResponse[]>([])
 const templates = ref<FollowupTemplateResponse[]>([])
+const savedViews = ref<SavedViewResponse[]>([])
+const viewName = ref('')
 const filters = reactive<ReportFilters>({
   dateFrom: '',
   dateTo: '',
@@ -101,9 +106,33 @@ async function load() {
     overview.value = await reportApi.getReportsOverview(normalizeFilters())
     users.value = await userApi.listUsers().catch(() => [])
     templates.value = await templateApi.listTemplates().catch(() => [])
+    savedViews.value = await savedViewApi.listSavedViews('reports').catch(() => [])
   } finally {
     loading.value = false
   }
+}
+
+async function saveCurrentView() {
+  if (!viewName.value.trim()) return
+  await savedViewApi.saveView({
+    pageKey: 'reports',
+    name: viewName.value.trim(),
+    shared: false,
+    configJson: JSON.stringify(normalizeFilters()),
+  })
+  viewName.value = ''
+  uiStore.showSuccess('Report view saved')
+  await load()
+}
+
+async function applySavedView(view: SavedViewResponse) {
+  Object.assign(filters, JSON.parse(view.configJson))
+  await load()
+}
+
+async function exportCsv() {
+  await reportApi.exportReportCsv(normalizeFilters())
+  uiStore.showSuccess('CSV export generated from current report filters')
 }
 
 watch(
@@ -131,6 +160,17 @@ onMounted(async () => {
         <h1 class="page-title">Reporting</h1>
         <p class="page-subtitle">Comprehensive filtered analytics for funnel health, outcomes, and team performance.</p>
       </div>
+      <div class="d-flex ga-2">
+        <v-text-field v-model="viewName" label="Save view as" hide-details density="comfortable" min-width="220" />
+        <v-btn color="primary" variant="tonal" @click="saveCurrentView">Save view</v-btn>
+        <v-btn color="secondary" variant="tonal" @click="exportCsv">Export CSV</v-btn>
+      </div>
+    </div>
+
+    <div class="d-flex ga-2 mb-4 flex-wrap">
+      <v-chip v-for="view in savedViews" :key="view.id" variant="tonal" @click="applySavedView(view)">
+        {{ view.name }}
+      </v-chip>
     </div>
 
     <v-card class="mb-4">

@@ -1,6 +1,7 @@
 package com.bdcrm.template;
 
 import com.bdcrm.common.BaseEntity;
+import com.bdcrm.pipeline.TemplatePipelineStage;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -33,4 +34,8 @@ public class FollowupTemplate extends BaseEntity {
     @OneToMany(mappedBy = "template", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("stepNumber ASC")
     private List<FollowupTemplateStep> steps = new ArrayList<>();
+
+    @OneToMany(mappedBy = "template", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("stageOrder ASC")
+    private List<TemplatePipelineStage> pipelineStages = new ArrayList<>();
 }
