@@ -6,6 +6,7 @@ import * as importApi from '@/api/imports'
 import * as leadApi from '@/api/leads'
 import * as userApi from '@/api/users'
 import AppEmptyState from '@/components/common/AppEmptyState.vue'
+import LeadImportDialog from '@/components/imports/LeadImportDialog.vue'
 import StatusChip from '@/components/common/StatusChip.vue'
 import { useUiStore } from '@/stores/ui'
 import type { LeadStatus, LeadSummaryResponse, UserResponse } from '@/types/api'
@@ -17,7 +18,7 @@ const leads = ref<LeadSummaryResponse[]>([])
 const users = ref<UserResponse[]>([])
 const totalPages = ref(0)
 const totalElements = ref(0)
-const importFile = ref<File | null>(null)
+const importDialog = ref(false)
 const bulkDialog = ref(false)
 const bulk = reactive({
   leadIds: [] as number[],
@@ -78,18 +79,17 @@ async function exportCsv() {
   uiStore.showSuccess('Lead CSV export generated')
 }
 
-async function previewImport(files: File | File[] | null) {
-  importFile.value = Array.isArray(files) ? files[0] ?? null : files
-  if (!importFile.value) return
-  const preview = await importApi.previewLeadImport(importFile.value)
-  uiStore.showSuccess(`Import preview ready for ${preview.totalRows} rows`)
-}
-
-async function runImport() {
-  if (!importFile.value) return
-  const result = await importApi.importLeads(importFile.value)
-  uiStore.showSuccess(`Imported ${result.createdCount} leads`)
-  await loadLeads()
+async function downloadImportTemplate() {
+  const blob = await importApi.downloadLeadImportTemplate()
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = 'lead-import-template.csv'
+  document.body.appendChild(anchor)
+  anchor.click()
+  document.body.removeChild(anchor)
+  URL.revokeObjectURL(url)
+  uiStore.showSuccess('Lead import template downloaded')
 }
 
 async function applyBulkAction() {
@@ -112,8 +112,12 @@ async function applyBulkAction() {
         <p class="page-subtitle">Search, filter, and manage the pipeline from first contact to close.</p>
       </div>
       <div class="d-flex ga-2">
-        <v-file-input density="comfortable" hide-details label="Import CSV" max-width="220" @update:model-value="previewImport" />
-        <v-btn variant="tonal" color="secondary" @click="runImport">Run import</v-btn>
+        <v-btn variant="tonal" color="secondary" prepend-icon="mdi-download" @click="downloadImportTemplate">
+          Download template
+        </v-btn>
+        <v-btn variant="tonal" color="primary" prepend-icon="mdi-file-import" @click="importDialog = true">
+          Import leads
+        </v-btn>
         <v-btn variant="tonal" color="secondary" @click="exportCsv">Export CSV</v-btn>
         <v-btn variant="tonal" color="primary" @click="bulkDialog = true">Bulk action</v-btn>
         <v-btn color="primary" prepend-icon="mdi-plus" @click="router.push('/leads/new')">New lead</v-btn>
@@ -205,5 +209,7 @@ async function applyBulkAction() {
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <LeadImportDialog v-model="importDialog" @imported="loadLeads" />
   </div>
 </template>

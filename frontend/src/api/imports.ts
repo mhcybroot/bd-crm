@@ -1,20 +1,39 @@
 import { http } from '@/api/http'
-import type { LeadImportPreviewResponse, LeadImportResultResponse } from '@/types/api'
+import type { LeadImportPreviewRequest, LeadImportPreviewResponse, LeadImportResultResponse } from '@/types/api'
 
-export async function previewLeadImport(file: File) {
+function buildImportFormData(file: File, payload: LeadImportPreviewRequest) {
   const formData = new FormData()
   formData.append('file', file)
-  const { data } = await http.post<LeadImportPreviewResponse>('/api/imports/leads/preview', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+  formData.append('importMode', payload.importMode)
+  formData.append('columnMappings', JSON.stringify(payload.columnMappings))
+  return formData
+}
+
+export async function downloadLeadImportTemplate() {
+  const { data } = await http.get<Blob>('/api/imports/leads/template', {
+    responseType: 'blob',
   })
   return data
 }
 
-export async function importLeads(file: File) {
-  const formData = new FormData()
-  formData.append('file', file)
-  const { data } = await http.post<LeadImportResultResponse>('/api/imports/leads', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  })
+export async function previewLeadImport(file: File, payload: LeadImportPreviewRequest) {
+  const { data } = await http.post<LeadImportPreviewResponse>(
+    '/api/imports/leads/preview',
+    buildImportFormData(file, payload),
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    },
+  )
+  return data
+}
+
+export async function importLeads(file: File, payload: LeadImportPreviewRequest) {
+  const { data } = await http.post<LeadImportResultResponse>(
+    '/api/imports/leads',
+    buildImportFormData(file, payload),
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    },
+  )
   return data
 }

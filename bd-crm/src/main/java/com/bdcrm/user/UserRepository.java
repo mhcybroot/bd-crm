@@ -12,4 +12,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @EntityGraph(attributePaths = "roles")
     List<User> findAllByOrderByFullNameAsc();
+
+    @EntityGraph(attributePaths = "roles")
+    Optional<User> findByEmailIgnoreCase(String email);
 }

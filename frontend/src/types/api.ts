@@ -487,23 +487,83 @@ export interface BulkFollowupActionRequest {
   notes?: string | null
 }
 
-export interface LeadImportPreviewResponse {
-  totalRows: number
-  rows: Array<{
-    rowNumber: number
-    companyName: string
-    contactName: string
-    email: string | null
-    phone: string | null
-    duplicateSuspected: boolean
-  }>
+export type LeadImportMode = 'CREATE_ONLY' | 'UPSERT_BY_EMAIL_OR_PHONE'
+export type LeadImportTargetField =
+  | 'companyName'
+  | 'contactName'
+  | 'email'
+  | 'phone'
+  | 'source'
+  | 'description'
+  | 'priority'
+  | 'assignedUserId'
+  | 'templateId'
+  | 'IGNORE'
+
+export interface LeadImportTemplateField {
+  key: Exclude<LeadImportTargetField, 'IGNORE'>
+  label: string
+  required: boolean
+  formatHint: string
+  example: string
+}
+
+export interface LeadImportValidationIssue {
+  field: string
+  message: string
+}
+
+export interface LeadImportColumnMapping {
+  [header: string]: LeadImportTargetField
+}
+
+export interface LeadImportPreviewRequest {
+  importMode: LeadImportMode
+  columnMappings: LeadImportColumnMapping
+}
+
+export interface LeadImportPreviewRow {
+  rowNumber: number
+  values: Record<string, string | null>
+  issues: LeadImportValidationIssue[]
   warnings: string[]
+  duplicateSuspected: boolean
+  valid: boolean
+  suggestedAction: string
+}
+
+export interface LeadImportSummaryResponse {
+  validRows: number
+  warningRows: number
+  invalidRows: number
+  duplicateRows: number
+}
+
+export interface LeadImportPreviewResponse {
+  detectedHeaders: string[]
+  requiredFields: string[]
+  resolvedMapping: Record<string, string>
+  totalRows: number
+  rows: LeadImportPreviewRow[]
+  warnings: string[]
+  summary: LeadImportSummaryResponse
+  fieldGuide: LeadImportTemplateField[]
+}
+
+export interface LeadImportRowResult {
+  rowNumber: number
+  outcome: string
+  messages: string[]
 }
 
 export interface LeadImportResultResponse {
   createdCount: number
+  updatedCount: number
+  skippedCount: number
   duplicateCount: number
+  invalidCount: number
   errors: string[]
+  rowResults: LeadImportRowResult[]
 }
 
 export interface UserCreateRequest {

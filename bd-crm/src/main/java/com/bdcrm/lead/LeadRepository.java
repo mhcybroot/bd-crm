@@ -17,4 +17,10 @@ public interface LeadRepository extends JpaRepository<Lead, Long>, JpaSpecificat
     java.util.Optional<Lead> findById(Long id);
 
     boolean existsByCurrentStageId(Long currentStageId);
+
+    @EntityGraph(attributePaths = {"assignedUser", "template", "currentStage"})
+    java.util.List<Lead> findAllByEmailIgnoreCase(String email);
+
+    @EntityGraph(attributePaths = {"assignedUser", "template", "currentStage"})
+    java.util.List<Lead> findAllByPhoneIgnoreCase(String phone);
 }

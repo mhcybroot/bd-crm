@@ -15,4 +15,7 @@ public interface FollowupTemplateRepository extends JpaRepository<FollowupTempla
 
     @EntityGraph(attributePaths = {"steps"})
     Optional<FollowupTemplate> findFirstByIsDefaultTrueAndActiveTrue();
+
+    @EntityGraph(attributePaths = {"steps"})
+    Optional<FollowupTemplate> findByNameIgnoreCase(String name);
 }
