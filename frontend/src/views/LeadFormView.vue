@@ -4,13 +4,16 @@ import { useRoute, useRouter } from 'vue-router'
 import * as leadApi from '@/api/leads'
 import * as templateApi from '@/api/templates'
 import * as userApi from '@/api/users'
+import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
 import type { FollowupTemplateResponse, LeadRequest, UserResponse } from '@/types/api'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 const uiStore = useUiStore()
 const isEdit = computed(() => !!route.params.id)
+const canManageAssignee = computed(() => authStore.hasRole('ADMIN', 'MANAGER'))
 const loading = ref(false)
 const users = ref<UserResponse[]>([])
 const templates = ref<FollowupTemplateResponse[]>([])
@@ -27,9 +30,37 @@ const form = reactive<LeadRequest>({
 })
 
 async function loadReferenceData() {
-  const [usersData, templatesData] = await Promise.all([userApi.listUsers(), templateApi.listTemplates()])
-  users.value = usersData
-  templates.value = templatesData
+  const [usersResult, templatesResult] = await Promise.allSettled([userApi.listUsers(), templateApi.listTemplates()])
+
+  if (usersResult.status === 'fulfilled') {
+    users.value = usersResult.value
+  } else {
+    users.value = authStore.user
+      ? [{
+          id: authStore.user.id,
+          username: authStore.user.username,
+          fullName: authStore.user.fullName,
+          email: authStore.user.email,
+          active: true,
+          managerId: null,
+          roles: authStore.user.roles,
+        }]
+      : []
+  }
+
+  if (templatesResult.status === 'fulfilled') {
+    templates.value = templatesResult.value
+  } else {
+    templates.value = []
+    uiStore.showError('Unable to load follow-up templates')
+  }
+
+  if (!form.assignedUserId) {
+    form.assignedUserId = authStore.user?.id ?? users.value[0]?.id ?? null
+  }
+  if (!form.templateId) {
+    form.templateId = templates.value[0]?.id ?? null
+  }
 }
 
 async function loadLead() {
@@ -107,6 +138,7 @@ onMounted(async () => {
                 :items="users"
                 item-title="fullName"
                 item-value="id"
+                :disabled="!canManageAssignee"
               />
             </v-col>
             <v-col cols="12">

@@ -39,6 +39,15 @@ function openDialog(mode: typeof dialog.mode, followupId: number) {
   Object.assign(dialog, { open: true, mode, followupId, dueDate: '', outcome: null, assignedUserId: null, notes: '' })
 }
 
+function displayStatus(status: LeadFollowupResponse['status']) {
+  if (statusFilter.value === 'upcoming' && status === 'DUE') return 'SCHEDULED'
+  return status
+}
+
+function canMutate(item: LeadFollowupResponse) {
+  return !['COMPLETED', 'CANCELLED', 'SKIPPED'].includes(item.status)
+}
+
 async function submitAction() {
   if (dialog.mode === 'complete' && !dialog.outcome) {
     uiStore.showError('Outcome is required before completing a follow-up')
@@ -83,6 +92,8 @@ async function submitAction() {
             <th class="text-left">Owner</th>
             <th class="text-left">Status</th>
             <th class="text-left">Channel</th>
+            <th class="text-left">Outcome</th>
+            <th class="text-left">Notes</th>
             <th class="text-left">Actions</th>
           </tr>
         </template>
@@ -91,15 +102,18 @@ async function submitAction() {
             <td>{{ item.stepNumber }}</td>
             <td>{{ formatDate(item.dueDate) }}</td>
             <td>{{ item.assignedUserName }}</td>
-            <td><StatusChip :value="item.status" /></td>
+            <td><StatusChip :value="displayStatus(item.status)" /></td>
             <td>{{ item.channel }}</td>
+            <td>{{ item.status === 'COMPLETED' ? (item.outcome || 'Unknown') : '-' }}</td>
+            <td>{{ item.status === 'COMPLETED' ? (item.notes || '-') : '-' }}</td>
             <td>
-              <div class="d-flex ga-2">
+              <div v-if="canMutate(item)" class="d-flex ga-2">
                 <v-btn size="small" color="success" variant="tonal" @click="openDialog('complete', item.id)">Complete</v-btn>
                 <v-btn size="small" color="warning" variant="tonal" @click="openDialog('reschedule', item.id)">Reschedule</v-btn>
                 <v-btn size="small" color="secondary" variant="tonal" @click="openDialog('reassign', item.id)">Reassign</v-btn>
                 <v-btn size="small" color="error" variant="tonal" @click="openDialog('skip', item.id)">Skip</v-btn>
               </div>
+              <span v-else class="text-medium-emphasis">No actions</span>
             </td>
           </tr>
         </template>
