@@ -5,6 +5,7 @@ import com.bdcrm.lead.Lead;
 import com.bdcrm.lead.LeadActivityService;
 import com.bdcrm.lead.LeadActivityType;
 import com.bdcrm.lead.LeadRepository;
+import com.bdcrm.lead.LeadSpecifications;
 import com.bdcrm.lead.LeadSummaryResponse;
 import com.bdcrm.template.FollowupTemplate;
 import com.bdcrm.template.FollowupTemplateRepository;
@@ -16,6 +17,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,28 +47,42 @@ public class PipelineService {
     }
 
     @Transactional(readOnly = true)
-    public PipelineBoardResponse board(Long templateId) {
+    public PipelineBoardResponse board(Long templateId, PipelineBoardFilterRequest filters) {
         FollowupTemplate template = requireTemplate(templateId);
         List<TemplatePipelineStage> stages = stageRepository.findByTemplateIdOrderByStageOrderAsc(templateId);
-        List<Lead> leads = leadRepository.findAll().stream()
-                .filter(lead -> lead.getTemplate().getId().equals(templateId))
-                .filter(lead -> lead.getMergedIntoLeadId() == null)
-                .toList();
         return new PipelineBoardResponse(
                 template.getId(),
                 template.getName(),
+                filters,
                 stages.stream()
                         .map(stage -> new PipelineBoardColumnResponse(
                                 stage.getId(),
                                 stage.getName(),
                                 stage.getSlaHours(),
-                                leads.stream().filter(lead -> lead.getCurrentStage() != null && lead.getCurrentStage().getId().equals(stage.getId())).count(),
-                                leads.stream()
-                                        .filter(lead -> lead.getCurrentStage() != null && lead.getCurrentStage().getId().equals(stage.getId()))
-                                        .sorted(Comparator.comparing(Lead::getUpdatedAt).reversed())
-                                        .map(LeadSummaryResponse::from)
-                                        .toList()))
+                                leadRepository.count(buildSpec(templateId, stage.getId(), filters)),
+                                leadRepository.count(buildSpec(templateId, stage.getId(), filters)
+                                        .and(LeadSpecifications.updatedBefore(OffsetDateTime.now().minusHours(stage.getSlaHours()))))))
                         .toList());
+    }
+
+    @Transactional(readOnly = true)
+    public PipelineStageLeadPageResponse stageLeads(Long templateId, Long stageId, PipelineBoardFilterRequest filters, int page, int size) {
+        FollowupTemplate template = requireTemplate(templateId);
+        TemplatePipelineStage stage = requireStage(stageId);
+        if (!stage.getTemplate().getId().equals(templateId)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Stage does not belong to template");
+        }
+        Page<Lead> result = leadRepository.findAll(
+                buildSpec(templateId, stageId, filters),
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "updatedAt")));
+        return new PipelineStageLeadPageResponse(
+                stage.getId(),
+                stage.getName(),
+                result.getTotalElements(),
+                result.getTotalPages(),
+                page,
+                size,
+                result.getContent().stream().map(LeadSummaryResponse::from).toList());
     }
 
     @Transactional
@@ -146,6 +165,21 @@ public class PipelineService {
     private FollowupTemplate requireTemplate(Long templateId) {
         return templateRepository.findById(templateId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Template not found"));
+    }
+
+    private Specification<Lead> buildSpec(Long templateId, Long stageId, PipelineBoardFilterRequest filters) {
+        PipelineBoardFilterRequest effectiveFilters = filters == null
+                ? new PipelineBoardFilterRequest(null, null, null, null, null, null, null)
+                : filters;
+        return Specification.where(LeadSpecifications.template(templateId))
+                .and(LeadSpecifications.currentStage(stageId))
+                .and(LeadSpecifications.notMerged())
+                .and(LeadSpecifications.search(effectiveFilters.search()))
+                .and(LeadSpecifications.assignedTo(effectiveFilters.assignedUserId()))
+                .and(LeadSpecifications.priority(effectiveFilters.priority()))
+                .and(LeadSpecifications.hasStatus(effectiveFilters.leadStatus()))
+                .and(LeadSpecifications.source(effectiveFilters.source()))
+                .and(LeadSpecifications.createdBetween(effectiveFilters.dateFrom(), effectiveFilters.dateTo()));
     }
 
     private boolean isStageReferenced(TemplatePipelineStage stage) {

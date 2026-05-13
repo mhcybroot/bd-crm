@@ -1,5 +1,11 @@
 import { http } from '@/api/http'
-import type { FollowupTemplateRequest, FollowupTemplateResponse, PipelineBoardResponse } from '@/types/api'
+import type {
+  FollowupTemplateRequest,
+  FollowupTemplateResponse,
+  PipelineBoardFilters,
+  PipelineBoardResponse,
+  PipelineStageLeadPageResponse,
+} from '@/types/api'
 
 export async function listTemplates() {
   const { data } = await http.get<FollowupTemplateResponse[]>('/api/followup-templates')
@@ -21,7 +27,19 @@ export async function updateTemplate(id: number, payload: FollowupTemplateReques
   return data
 }
 
-export async function getTemplateBoard(id: number) {
-  const { data } = await http.get<PipelineBoardResponse>(`/api/pipelines/templates/${id}/board`)
+export async function getTemplateBoard(id: number, params?: PipelineBoardFilters) {
+  const { data } = await http.get<PipelineBoardResponse>(`/api/pipelines/templates/${id}/board`, { params })
+  return data
+}
+
+export async function getTemplateBoardStageLeads(
+  templateId: number,
+  stageId: number,
+  params: PipelineBoardFilters & { page?: number; size?: number },
+) {
+  const { data } = await http.get<PipelineStageLeadPageResponse>(
+    `/api/pipelines/templates/${templateId}/board/stages/${stageId}/leads`,
+    { params },
+  )
   return data
 }

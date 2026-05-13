@@ -296,13 +296,34 @@ export interface PipelineBoardColumnResponse {
   stageName: string
   slaHours: number
   leadCount: number
-  leads: LeadSummaryResponse[]
+  slaBreachCount: number
+}
+
+export interface PipelineBoardFilters {
+  search?: string
+  assignedUserId?: number | null
+  priority?: LeadPriority | ''
+  leadStatus?: LeadStatus | ''
+  source?: string
+  dateFrom?: string
+  dateTo?: string
 }
 
 export interface PipelineBoardResponse {
   templateId: number
   templateName: string
+  filtersApplied: PipelineBoardFilters
   columns: PipelineBoardColumnResponse[]
+}
+
+export interface PipelineStageLeadPageResponse {
+  stageId: number
+  stageName: string
+  totalElements: number
+  totalPages: number
+  page: number
+  size: number
+  content: LeadSummaryResponse[]
 }
 
 export interface NotificationResponse {
