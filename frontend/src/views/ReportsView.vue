@@ -74,6 +74,13 @@ const outcomeChart = computed(() => ({
 }))
 
 const sortFields = ['completedFollowups', 'assignedLeads', 'pendingFollowups', 'userName']
+const repTableHeaders = [
+  { title: 'Rep ID', key: 'userId' },
+  { title: 'Rep', key: 'userName' },
+  { title: 'Assigned Leads', key: 'assignedLeads' },
+  { title: 'Pending Follow-ups', key: 'pendingFollowups' },
+  { title: 'Completed Follow-ups', key: 'completedFollowups' },
+]
 
 function normalizeFilters() {
   return {
@@ -207,16 +214,7 @@ onMounted(async () => {
 
     <v-card class="mt-4">
       <v-card-title>Rep Performance Table</v-card-title>
-      <v-data-table :items="overview?.reps ?? []" :loading="loading">
-        <template #headers>
-          <tr>
-            <th class="text-left">Rep</th>
-            <th class="text-left">Assigned Leads</th>
-            <th class="text-left">Pending Follow-ups</th>
-            <th class="text-left">Completed Follow-ups</th>
-          </tr>
-        </template>
-      </v-data-table>
+      <v-data-table :headers="repTableHeaders" :items="overview?.reps ?? []" :loading="loading" />
     </v-card>
   </div>
 </template>
