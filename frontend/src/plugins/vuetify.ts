@@ -7,23 +7,23 @@ const vuetify = createVuetify({
       crmLight: {
         dark: false,
         colors: {
-          primary: '#0f6c5c',
-          secondary: '#1f2937',
-          accent: '#d97706',
-          background: '#f4f7f3',
-          surface: '#ffffff',
-          success: '#2e7d32',
-          warning: '#ef6c00',
-          error: '#c62828',
-          info: '#1565c0',
+          primary: '#0f766e',
+          secondary: '#0f172a',
+          accent: '#ea580c',
+          background: '#f6f1e7',
+          surface: '#fffdf8',
+          success: '#15803d',
+          warning: '#d97706',
+          error: '#dc2626',
+          info: '#0f766e',
         },
       },
     },
   },
   defaults: {
     VCard: {
-      rounded: 'lg',
-      elevation: 1,
+      rounded: 'xl',
+      elevation: 0,
     },
     VTextField: {
       variant: 'outlined',
@@ -38,7 +38,17 @@ const vuetify = createVuetify({
       density: 'comfortable',
     },
     VBtn: {
-      rounded: 'lg',
+      rounded: 'xl',
+      style: 'text-transform:none;font-weight:700;letter-spacing:0.01em;',
+    },
+    VChip: {
+      rounded: 'xl',
+    },
+    VDialog: {
+      scrim: '#0f172acc',
+    },
+    VDataTable: {
+      density: 'comfortable',
     },
   },
 })

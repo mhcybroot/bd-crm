@@ -105,13 +105,13 @@ async function applyBulkAction() {
 </script>
 
 <template>
-  <div>
-    <div class="page-header">
+  <div class="page-shell">
+    <div class="page-header page-hero">
       <div>
         <h1 class="page-title">Leads</h1>
         <p class="page-subtitle">Search, filter, and manage the pipeline from first contact to close.</p>
       </div>
-      <div class="d-flex ga-2">
+      <div class="crm-hero-actions">
         <v-btn variant="tonal" color="secondary" prepend-icon="mdi-download" @click="downloadImportTemplate">
           Download template
         </v-btn>
@@ -124,7 +124,7 @@ async function applyBulkAction() {
       </div>
     </div>
 
-    <v-card class="mb-4">
+    <v-card class="mb-4 crm-card">
       <v-card-text>
         <v-row>
           <v-col cols="12" md="4">
@@ -154,7 +154,7 @@ async function applyBulkAction() {
       </v-card-text>
     </v-card>
 
-    <v-card>
+    <v-card class="crm-card">
       <v-data-table :items="leads" :loading="loading" :items-per-page="filters.size">
         <template #headers>
           <tr>
@@ -167,7 +167,7 @@ async function applyBulkAction() {
           </tr>
         </template>
         <template #item="{ item }">
-          <tr class="cursor-pointer" @click="router.push(`/leads/${item.id}`)">
+          <tr class="cursor-pointer crm-table-row" @click="router.push(`/leads/${item.id}`)">
             <td>{{ item.companyName }}</td>
             <td>{{ item.contactName }}</td>
             <td><StatusChip :value="item.status" /></td>
@@ -195,7 +195,7 @@ async function applyBulkAction() {
     </v-card>
 
     <v-dialog v-model="bulkDialog" max-width="720">
-      <v-card>
+      <v-card class="crm-card">
         <v-card-title>Bulk Lead Action</v-card-title>
         <v-card-text>
           <v-select v-model="bulk.leadIds" label="Leads" :items="leads" item-title="companyName" item-value="id" chips multiple />

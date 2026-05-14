@@ -94,7 +94,7 @@ describe('AppLayout search', () => {
 
     const { router, wrapper } = await renderLayout()
     const pushSpy = vi.spyOn(router, 'push')
-    const input = wrapper.find('input[placeholder="Search leads, notes, follow-ups"]')
+    const input = wrapper.find('input[placeholder="Jump to leads, notes, follow-ups"]')
 
     await input.setValue('acme')
     await vi.advanceTimersByTimeAsync(250)
@@ -128,7 +128,7 @@ describe('AppLayout search', () => {
     })
 
     const { wrapper } = await renderLayout()
-    const input = wrapper.find('input[placeholder="Search leads, notes, follow-ups"]')
+    const input = wrapper.find('input[placeholder="Jump to leads, notes, follow-ups"]')
 
     await input.setValue('missing')
     await vi.advanceTimersByTimeAsync(250)

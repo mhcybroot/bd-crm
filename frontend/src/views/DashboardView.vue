@@ -62,15 +62,19 @@ watch(
 </script>
 
 <template>
-  <div>
-    <div class="page-header">
+  <div class="page-shell">
+    <div class="page-header page-hero">
       <div>
         <h1 class="page-title">Dashboard</h1>
-        <p class="page-subtitle">Executive and operational view with trend-aware lead and outcome tracking.</p>
+        <p class="page-subtitle">Executive visibility with a live operating rhythm across leads, outcomes, and overdue work.</p>
+      </div>
+      <div class="crm-hero-actions">
+        <v-chip color="primary" variant="flat">Live metrics</v-chip>
+        <v-chip color="accent" variant="tonal">Team pulse</v-chip>
       </div>
     </div>
 
-    <v-card class="mb-4">
+    <v-card class="mb-4 crm-card">
       <v-card-text>
         <v-row>
           <v-col cols="12" md="3"><v-text-field v-model="filters.dateFrom" type="date" label="Date from" /></v-col>
@@ -103,70 +107,70 @@ watch(
       </v-card-text>
     </v-card>
 
-    <v-row class="mb-4">
+    <v-row class="mb-4 crm-stagger">
       <v-col cols="12" md="3">
-        <v-card class="pa-5">
-          <div class="text-overline">Total Leads</div>
-          <div class="text-h4">{{ summary?.leadsTotal ?? 0 }}</div>
+        <v-card class="pa-5 metric-card crm-card">
+          <div class="metric-label">Total Leads</div>
+          <div class="metric-value">{{ summary?.leadsTotal ?? 0 }}</div>
         </v-card>
       </v-col>
       <v-col cols="12" md="3">
-        <v-card class="pa-5">
-          <div class="text-overline">New Leads In Range</div>
-          <div class="text-h4">{{ summary?.newLeadsInRange ?? 0 }}</div>
+        <v-card class="pa-5 metric-card crm-card">
+          <div class="metric-label">New Leads In Range</div>
+          <div class="metric-value">{{ summary?.newLeadsInRange ?? 0 }}</div>
         </v-card>
       </v-col>
       <v-col cols="12" md="3">
-        <v-card class="pa-5">
-          <div class="text-overline">Completed Follow-ups</div>
-          <div class="text-h4 text-success">{{ summary?.completedFollowups ?? 0 }}</div>
+        <v-card class="pa-5 metric-card crm-card">
+          <div class="metric-label">Completed Follow-ups</div>
+          <div class="metric-value text-success">{{ summary?.completedFollowups ?? 0 }}</div>
         </v-card>
       </v-col>
       <v-col cols="12" md="3">
-        <v-card class="pa-5">
-          <div class="text-overline">Completion Rate</div>
-          <div class="text-h4 text-primary">{{ summary?.completionRate ?? 0 }}%</div>
+        <v-card class="pa-5 metric-card crm-card">
+          <div class="metric-label">Completion Rate</div>
+          <div class="metric-value text-primary">{{ summary?.completionRate ?? 0 }}%</div>
         </v-card>
       </v-col>
     </v-row>
 
-    <v-row class="mb-4">
+    <v-row class="mb-4 crm-stagger">
       <v-col v-for="card in statusCards" :key="card.key" cols="6" md="2">
-        <v-card class="pa-4">
-          <div class="text-caption text-medium-emphasis">{{ titleCase(card.key) }}</div>
+        <v-card class="pa-4 crm-card">
+          <div class="metric-label">{{ titleCase(card.key) }}</div>
           <div class="text-h6">{{ card.value }}</div>
         </v-card>
       </v-col>
     </v-row>
 
-    <v-row class="mb-4">
+    <v-row class="mb-4 crm-stagger">
       <v-col cols="12" md="4">
-        <v-card class="pa-5">
-          <div class="text-overline">Due Today</div>
-          <div class="text-h4">{{ summary?.dueToday ?? 0 }}</div>
+        <v-card class="pa-5 metric-card crm-card">
+          <div class="metric-label">Due Today</div>
+          <div class="metric-value">{{ summary?.dueToday ?? 0 }}</div>
         </v-card>
       </v-col>
       <v-col cols="12" md="4">
-        <v-card class="pa-5">
-          <div class="text-overline">Overdue</div>
-          <div class="text-h4 text-error">{{ summary?.overdue ?? 0 }}</div>
+        <v-card class="pa-5 metric-card crm-card">
+          <div class="metric-label">Overdue</div>
+          <div class="metric-value text-error">{{ summary?.overdue ?? 0 }}</div>
         </v-card>
       </v-col>
       <v-col cols="12" md="4">
-        <v-card class="pa-5">
-          <div class="text-overline">Escalated</div>
-          <div class="text-h4 text-warning">{{ summary?.escalated ?? 0 }}</div>
+        <v-card class="pa-5 metric-card crm-card">
+          <div class="metric-label">Escalated</div>
+          <div class="metric-value text-warning">{{ summary?.escalated ?? 0 }}</div>
         </v-card>
       </v-col>
     </v-row>
 
-    <v-card class="mb-4">
+    <v-card class="mb-4 crm-card">
       <v-card-title>Outcome Summary</v-card-title>
       <v-card-text>
-        <v-row>
+        <v-row class="crm-stagger">
           <v-col v-for="card in outcomeCards" :key="card.key" cols="6" md="3">
-            <v-card class="pa-4">
-              <div class="text-caption text-medium-emphasis">{{ titleCase(card.key) }}</div>
+            <v-card class="pa-4 crm-card">
+              <div class="metric-label">{{ titleCase(card.key) }}</div>
               <div class="text-h6">{{ card.value }}</div>
             </v-card>
           </v-col>
@@ -174,7 +178,7 @@ watch(
       </v-card-text>
     </v-card>
 
-    <v-card>
+    <v-card class="crm-card">
       <v-card-title>Due and Overdue Follow-ups</v-card-title>
       <v-data-table :items="workQueue" :loading="loading" items-per-page="8">
         <template #headers>
@@ -188,7 +192,7 @@ watch(
           </tr>
         </template>
         <template #item="{ item }">
-          <tr class="cursor-pointer" @click="router.push(`/leads/${item.leadId}`)">
+          <tr class="cursor-pointer crm-table-row" @click="router.push(`/leads/${item.leadId}`)">
             <td>{{ item.companyName }}</td>
             <td>{{ item.stepNumber }}</td>
             <td>{{ formatDate(item.dueDate) }}</td>

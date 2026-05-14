@@ -165,24 +165,25 @@ onMounted(load)
 </script>
 
 <template>
-  <div v-if="loading" class="pa-6 text-medium-emphasis">Loading lead...</div>
+  <div v-if="loading" class="pa-6 text-medium-emphasis page-shell">Loading lead...</div>
   <v-alert v-else-if="loadError" type="error" variant="tonal" class="mb-4">
     {{ loadError }}
   </v-alert>
-  <div v-if="lead">
-    <div class="page-header">
+  <div v-if="lead" class="page-shell">
+    <div class="page-header page-hero">
       <div>
         <h1 class="page-title">{{ lead.lead.companyName }}</h1>
         <p class="page-subtitle">{{ lead.lead.contactName }} · {{ lead.lead.email || 'No email' }}</p>
       </div>
-      <div class="d-flex ga-3">
+      <div class="crm-hero-actions">
+        <v-chip color="primary" variant="flat">{{ lead.lead.currentStageName || 'Unstaged' }}</v-chip>
         <v-btn variant="outlined" @click="router.push(`/leads/${lead.lead.id}/edit`)">Edit</v-btn>
       </div>
     </div>
 
     <v-row>
       <v-col cols="12" md="4">
-        <v-card class="mb-4">
+        <v-card class="mb-4 crm-card">
           <v-card-title>Lead Snapshot</v-card-title>
           <v-card-text class="d-flex flex-column ga-3">
             <div class="d-flex justify-space-between"><span>Status</span><StatusChip :value="lead.lead.status" /></div>
@@ -197,7 +198,7 @@ onMounted(load)
           </v-card-text>
         </v-card>
 
-        <v-card class="mb-4">
+        <v-card class="mb-4 crm-card">
           <v-card-title>Quick Actions</v-card-title>
           <v-card-text>
             <v-select v-model="actions.status" label="Update status" :items="['NEW', 'IN_PROGRESS', 'QUALIFIED', 'WON', 'LOST', 'DORMANT']" />
@@ -221,7 +222,7 @@ onMounted(load)
           </v-card-text>
         </v-card>
 
-        <v-card class="mb-4">
+        <v-card class="mb-4 crm-card">
           <v-card-title>Add Note</v-card-title>
           <v-card-text>
             <v-textarea v-model="noteBody" label="Conversation details or next step" rows="4" />
@@ -229,7 +230,7 @@ onMounted(load)
           </v-card-text>
         </v-card>
 
-        <v-card class="mb-4">
+        <v-card class="mb-4 crm-card">
           <v-card-title>Qualification</v-card-title>
           <v-card-text>
             <v-text-field v-model="qualification.budgetRange" label="Budget range" />
@@ -243,7 +244,7 @@ onMounted(load)
           </v-card-text>
         </v-card>
 
-        <v-card>
+        <v-card class="crm-card">
           <v-card-title>Attachments</v-card-title>
           <v-card-text>
             <v-file-input label="Upload file" @update:model-value="selectUploadFile" />
@@ -256,14 +257,14 @@ onMounted(load)
       </v-col>
 
       <v-col cols="12" md="8">
-        <v-card class="mb-4">
+        <v-card class="mb-4 crm-card">
           <v-card-title>7-Step Follow-up Tracker</v-card-title>
           <v-card-text>
             <FollowupTimeline :followups="lead.followups" />
           </v-card-text>
         </v-card>
 
-        <v-card class="mb-4">
+        <v-card class="mb-4 crm-card">
           <v-card-title>Communications</v-card-title>
           <v-card-text>
             <v-row>
@@ -285,7 +286,7 @@ onMounted(load)
           </v-card-text>
         </v-card>
 
-        <v-card class="mb-4">
+        <v-card class="mb-4 crm-card">
           <v-card-title>Notes</v-card-title>
           <v-list lines="three">
             <v-list-item v-for="note in lead.notes" :key="note.id">
@@ -298,7 +299,7 @@ onMounted(load)
           </v-list>
         </v-card>
 
-        <v-card>
+        <v-card class="crm-card">
           <v-card-title>Activity and Stage Timeline</v-card-title>
           <v-timeline density="compact" side="end">
             <v-timeline-item v-for="history in lead.stageHistory" :key="`stage-${history.id}`" dot-color="primary" size="small">
