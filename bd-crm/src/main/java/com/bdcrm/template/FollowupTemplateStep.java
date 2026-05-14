@@ -1,6 +1,7 @@
 package com.bdcrm.template;
 
 import com.bdcrm.common.BaseEntity;
+import com.bdcrm.organization.Organization;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -21,6 +22,10 @@ public class FollowupTemplateStep extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "template_id", nullable = false)
     private FollowupTemplate template;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
 
     @Column(name = "step_number", nullable = false)
     private int stepNumber;

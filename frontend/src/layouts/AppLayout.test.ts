@@ -28,6 +28,7 @@ function createTestRouter() {
       { path: '/followups', component: { template: '<div>Follow-ups</div>' } },
       { path: '/board', component: { template: '<div>Board</div>' } },
       { path: '/duplicates', component: { template: '<div>Duplicates</div>' } },
+      { path: '/organizations', component: { template: '<div>Organizations</div>' } },
       { path: '/templates', component: { template: '<div>Templates</div>' } },
       { path: '/reports', component: { template: '<div>Reports</div>' } },
       { path: '/users', component: { template: '<div>Users</div>' } },
@@ -43,7 +44,11 @@ async function renderLayout() {
     username: 'admin',
     fullName: 'Admin User',
     email: 'admin@example.com',
-    roles: ['ADMIN'],
+    organizationId: 1,
+    organizationName: 'Acme Org',
+    organizationSlug: 'acme-org',
+    platformRoles: ['PLATFORM_ADMIN'],
+    organizationRoles: ['ORG_ADMIN'],
   }))
 
   const router = createTestRouter()
@@ -106,6 +111,11 @@ describe('AppLayout search', () => {
     await flushPromises()
 
     expect(pushSpy).toHaveBeenCalledWith('/leads/42')
+  })
+
+  it('shows the organizations navigation item for platform admins', async () => {
+    const { wrapper } = await renderLayout()
+    expect(wrapper.text()).toContain('Organizations')
   })
 
   it('keeps the result panel open to show the empty state when nothing matches', async () => {

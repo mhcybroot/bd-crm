@@ -1,6 +1,7 @@
 package com.bdcrm.user;
 
 import com.bdcrm.common.BaseEntity;
+import com.bdcrm.organization.Organization;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -20,7 +21,7 @@ import lombok.Setter;
 @Table(name = "users")
 public class User extends BaseEntity {
 
-    @Column(nullable = false, unique = true, length = 64)
+    @Column(nullable = false, length = 64)
     private String username;
 
     @Column(nullable = false)
@@ -29,8 +30,12 @@ public class User extends BaseEntity {
     @Column(name = "full_name", nullable = false, length = 120)
     private String fullName;
 
-    @Column(nullable = false, unique = true, length = 120)
+    @Column(nullable = false, length = 120)
     private String email;
+
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
 
     @Column(nullable = false)
     private boolean active = true;

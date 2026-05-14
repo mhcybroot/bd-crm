@@ -8,6 +8,8 @@ public record UserResponse(
         String fullName,
         String email,
         boolean active,
+        Long organizationId,
+        String organizationName,
         Long managerId,
         Set<String> roles) {
 
@@ -18,6 +20,8 @@ public record UserResponse(
                 user.getFullName(),
                 user.getEmail(),
                 user.isActive(),
+                user.getOrganization().getId(),
+                user.getOrganization().getName(),
                 user.getManager() == null ? null : user.getManager().getId(),
                 user.getRoles().stream().map(role -> role.getName().name()).collect(java.util.stream.Collectors.toSet()));
     }

@@ -1,10 +1,12 @@
 package com.bdcrm.reporting;
 
+import com.bdcrm.auth.SecurityUtils;
 import com.bdcrm.followup.FollowupStatus;
 import com.bdcrm.followup.LeadFollowup;
 import com.bdcrm.followup.LeadFollowupRepository;
 import com.bdcrm.lead.Lead;
 import com.bdcrm.lead.LeadRepository;
+import com.bdcrm.lead.LeadSpecifications;
 import com.bdcrm.lead.LeadStatus;
 import com.bdcrm.user.User;
 import com.bdcrm.user.UserRepository;
@@ -25,6 +27,7 @@ public class ReportingService {
     private final LeadRepository leadRepository;
     private final LeadFollowupRepository leadFollowupRepository;
     private final UserRepository userRepository;
+    private final SecurityUtils securityUtils;
 
     @Transactional(readOnly = true)
     public Map<String, Long> funnel(ReportFilterRequest filter) {
@@ -39,7 +42,7 @@ public class ReportingService {
         List<LeadFollowup> followups = filteredFollowups(filter);
         long completed = followups.stream().filter(followup -> followup.getStatus() == FollowupStatus.COMPLETED).count();
         long completionRate = followups.isEmpty() ? 0 : Math.round((completed * 100.0) / followups.size());
-        List<PerformanceReportResponse.RepPerformance> reps = userRepository.findAllByOrderByFullNameAsc().stream()
+        List<PerformanceReportResponse.RepPerformance> reps = visibleUsers().stream()
                 .map(user -> toRepPerformance(user, leads, followups))
                 .sorted(repComparator(filter.effectiveSortBy(), filter.effectiveSortDirection()))
                 .toList();
@@ -60,7 +63,7 @@ public class ReportingService {
         long overdue = followups.stream().filter(f -> f.getStatus() == FollowupStatus.OVERDUE).count();
         long wonLeads = leads.stream().filter(lead -> lead.getStatus() == LeadStatus.WON).count();
         long lostLeads = leads.stream().filter(lead -> lead.getStatus() == LeadStatus.LOST).count();
-        List<PerformanceReportResponse.RepPerformance> reps = userRepository.findAllByOrderByFullNameAsc().stream()
+        List<PerformanceReportResponse.RepPerformance> reps = visibleUsers().stream()
                 .map(user -> toRepPerformance(user, leads, followups))
                 .sorted(repComparator(filter.effectiveSortBy(), filter.effectiveSortDirection()))
                 .toList();
@@ -98,7 +101,8 @@ public class ReportingService {
     }
 
     private List<Lead> filteredLeads(ReportFilterRequest filter) {
-        return leadRepository.findAll().stream()
+        Long organizationId = securityUtils.hasPlatformRole("PLATFORM_ADMIN") ? null : securityUtils.currentOrganizationId();
+        return leadRepository.findAll(org.springframework.data.jpa.domain.Specification.where(LeadSpecifications.organizationId(organizationId))).stream()
                 .filter(lead -> {
                     var created = lead.getCreatedAt().toLocalDate();
                     return !created.isBefore(filter.effectiveDateFrom()) && !created.isAfter(filter.effectiveDateTo());
@@ -114,12 +118,27 @@ public class ReportingService {
     private List<LeadFollowup> filteredFollowups(ReportFilterRequest filter) {
         List<Lead> filteredLeads = filteredLeads(filter);
         Map<Long, Lead> leadMap = filteredLeads.stream().collect(Collectors.toMap(Lead::getId, lead -> lead));
-        return leadFollowupRepository.findAll().stream()
+        Long organizationId = securityUtils.hasPlatformRole("PLATFORM_ADMIN") ? null : securityUtils.currentOrganizationId();
+        return visibleFollowups(organizationId).stream()
                 .filter(followup -> leadMap.containsKey(followup.getLead().getId()))
                 .filter(followup -> filter.followupOutcome() == null || followup.getOutcome() == filter.followupOutcome())
                 .filter(followup -> filter.channel() == null || followup.getChannel() == filter.channel())
                 .filter(followup -> filter.escalated() == null || (filter.escalated() ? followup.getEscalatedAt() != null : followup.getEscalatedAt() == null))
                 .toList();
+    }
+
+    private List<User> visibleUsers() {
+        return securityUtils.hasPlatformRole("PLATFORM_ADMIN")
+                ? userRepository.findAllByOrderByFullNameAsc()
+                : userRepository.findAllByOrganizationIdOrderByFullNameAsc(securityUtils.currentOrganizationId());
+    }
+
+    private List<LeadFollowup> visibleFollowups(Long organizationId) {
+        return organizationId == null
+                ? leadFollowupRepository.findAll()
+                : leadFollowupRepository.findByOrganizationIdAndStatusInOrderByDueDateAsc(
+                        organizationId,
+                        List.of(FollowupStatus.DUE, FollowupStatus.OVERDUE, FollowupStatus.COMPLETED, FollowupStatus.SKIPPED, FollowupStatus.CANCELLED));
     }
 
     private OutcomeSummaryResponse outcomeSummary(List<LeadFollowup> followups) {

@@ -22,5 +22,11 @@ public interface LeadRepository extends JpaRepository<Lead, Long>, JpaSpecificat
     java.util.List<Lead> findAllByEmailIgnoreCase(String email);
 
     @EntityGraph(attributePaths = {"assignedUser", "template", "currentStage"})
+    java.util.List<Lead> findAllByEmailIgnoreCaseAndOrganizationId(String email, Long organizationId);
+
+    @EntityGraph(attributePaths = {"assignedUser", "template", "currentStage"})
     java.util.List<Lead> findAllByPhoneIgnoreCase(String phone);
+
+    @EntityGraph(attributePaths = {"assignedUser", "template", "currentStage"})
+    java.util.List<Lead> findAllByPhoneIgnoreCaseAndOrganizationId(String phone, Long organizationId);
 }

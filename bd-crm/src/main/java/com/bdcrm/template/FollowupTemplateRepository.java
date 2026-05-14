@@ -11,11 +11,23 @@ public interface FollowupTemplateRepository extends JpaRepository<FollowupTempla
     List<FollowupTemplate> findAllByOrderByNameAsc();
 
     @EntityGraph(attributePaths = {"steps"})
+    List<FollowupTemplate> findAllByOrganizationIdOrderByNameAsc(Long organizationId);
+
+    @EntityGraph(attributePaths = {"steps"})
     Optional<FollowupTemplate> findById(Long id);
+
+    @EntityGraph(attributePaths = {"steps"})
+    Optional<FollowupTemplate> findByIdAndOrganizationId(Long id, Long organizationId);
 
     @EntityGraph(attributePaths = {"steps"})
     Optional<FollowupTemplate> findFirstByIsDefaultTrueAndActiveTrue();
 
     @EntityGraph(attributePaths = {"steps"})
+    Optional<FollowupTemplate> findFirstByOrganizationIdAndIsDefaultTrueAndActiveTrue(Long organizationId);
+
+    @EntityGraph(attributePaths = {"steps"})
     Optional<FollowupTemplate> findByNameIgnoreCase(String name);
+
+    @EntityGraph(attributePaths = {"steps"})
+    Optional<FollowupTemplate> findByNameIgnoreCaseAndOrganizationId(String name, Long organizationId);
 }

@@ -2,6 +2,7 @@ package com.bdcrm.followup;
 
 import com.bdcrm.common.BaseEntity;
 import com.bdcrm.lead.Lead;
+import com.bdcrm.organization.Organization;
 import com.bdcrm.template.ContactChannel;
 import com.bdcrm.user.User;
 import jakarta.persistence.Column;
@@ -36,6 +37,10 @@ public class LeadFollowup extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "assigned_user_id", nullable = false)
     private User assignedUser;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)

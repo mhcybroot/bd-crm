@@ -1,6 +1,7 @@
 package com.bdcrm.audit;
 
 import com.bdcrm.common.BaseEntity;
+import com.bdcrm.organization.Organization;
 import com.bdcrm.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,6 +21,10 @@ public class AuditEvent extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "actor_user_id")
     private User actor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "organization_id")
+    private Organization organization;
 
     @Column(name = "event_type", nullable = false, length = 64)
     private String eventType;

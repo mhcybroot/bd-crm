@@ -30,6 +30,7 @@ public class QualificationService {
                 .orElseGet(() -> {
                     LeadQualification qualification = new LeadQualification();
                     qualification.setLead(lead);
+                    qualification.setOrganization(lead.getOrganization());
                     return qualificationRepository.save(qualification);
                 });
     }

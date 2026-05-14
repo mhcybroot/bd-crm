@@ -2,6 +2,7 @@ package com.bdcrm.communication;
 
 import com.bdcrm.common.BaseEntity;
 import com.bdcrm.lead.Lead;
+import com.bdcrm.organization.Organization;
 import com.bdcrm.template.ContactChannel;
 import com.bdcrm.user.User;
 import jakarta.persistence.Column;
@@ -29,6 +30,10 @@ public class LeadCommunication extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "actor_id", nullable = false)
     private User actor;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)

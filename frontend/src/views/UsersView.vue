@@ -1,29 +1,53 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import * as organizationApi from '@/api/organizations'
 import * as userApi from '@/api/users'
+import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
-import type { RoleName, UserCreateRequest, UserResponse } from '@/types/api'
+import type { OrganizationResponse, RoleName, UserCreateRequest, UserResponse } from '@/types/api'
 
+const authStore = useAuthStore()
 const uiStore = useUiStore()
 const users = ref<UserResponse[]>([])
+const organizations = ref<OrganizationResponse[]>([])
 const dialog = ref(false)
+const isPlatformAdmin = authStore.hasRole('PLATFORM_ADMIN')
+const roleOptions = isPlatformAdmin
+  ? ['PLATFORM_ADMIN', 'ORG_ADMIN', 'ORG_MANAGER', 'ORG_REP']
+  : ['ORG_ADMIN', 'ORG_MANAGER', 'ORG_REP']
 const form = reactive<UserCreateRequest>({
   username: '',
   password: '',
   fullName: '',
   email: '',
   managerId: null,
-  roles: ['REP'],
+  organizationId: null,
+  roles: ['ORG_REP'],
 })
 
 async function load() {
-  users.value = await userApi.listUsers()
+  const [loadedUsers, loadedOrganizations] = await Promise.all([
+    userApi.listUsers(),
+    isPlatformAdmin ? organizationApi.listOrganizations() : Promise.resolve([]),
+  ])
+  users.value = loadedUsers
+  organizations.value = loadedOrganizations
+  if (!form.organizationId) {
+    form.organizationId = isPlatformAdmin ? organizations.value[0]?.id ?? null : authStore.user?.organizationId ?? null
+  }
 }
 
 async function submit() {
   try {
     await userApi.createUser(form)
     dialog.value = false
+    form.username = ''
+    form.password = ''
+    form.fullName = ''
+    form.email = ''
+    form.managerId = null
+    form.roles = ['ORG_REP']
+    form.organizationId = isPlatformAdmin ? organizations.value[0]?.id ?? null : authStore.user?.organizationId ?? null
     uiStore.showSuccess('User created')
     await load()
   } catch (error) {
@@ -69,6 +93,7 @@ onMounted(load)
             <th class="text-left">Name</th>
             <th class="text-left">Username</th>
             <th class="text-left">Email</th>
+            <th class="text-left">Organization</th>
             <th class="text-left">Roles</th>
             <th class="text-left">Status</th>
             <th class="text-left">Actions</th>
@@ -79,10 +104,11 @@ onMounted(load)
             <td>{{ item.fullName }}</td>
             <td>{{ item.username }}</td>
             <td>{{ item.email }}</td>
+            <td>{{ item.organizationName }}</td>
             <td style="min-width: 240px;">
               <v-select
                 :model-value="item.roles"
-                :items="['ADMIN', 'MANAGER', 'REP']"
+                :items="roleOptions"
                 multiple
                 chips
                 hide-details
@@ -109,7 +135,16 @@ onMounted(load)
             <v-col cols="12" md="6"><v-text-field v-model="form.username" label="Username" /></v-col>
             <v-col cols="12" md="6"><v-text-field v-model="form.email" label="Email" /></v-col>
             <v-col cols="12" md="6"><v-text-field v-model="form.password" type="password" label="Password" /></v-col>
-            <v-col cols="12"><v-select v-model="form.roles" label="Roles" :items="['ADMIN', 'MANAGER', 'REP']" chips multiple /></v-col>
+            <v-col v-if="isPlatformAdmin" cols="12">
+              <v-select
+                v-model="form.organizationId"
+                label="Organization"
+                :items="organizations"
+                item-title="name"
+                item-value="id"
+              />
+            </v-col>
+            <v-col cols="12"><v-select v-model="form.roles" label="Roles" :items="roleOptions" chips multiple /></v-col>
           </v-row>
         </v-card-text>
         <v-card-actions>

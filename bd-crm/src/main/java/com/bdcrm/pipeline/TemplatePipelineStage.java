@@ -1,6 +1,7 @@
 package com.bdcrm.pipeline;
 
 import com.bdcrm.common.BaseEntity;
+import com.bdcrm.organization.Organization;
 import com.bdcrm.template.FollowupTemplate;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,6 +21,10 @@ public class TemplatePipelineStage extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "template_id", nullable = false)
     private FollowupTemplate template;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
 
     @Column(nullable = false, length = 120)
     private String name;

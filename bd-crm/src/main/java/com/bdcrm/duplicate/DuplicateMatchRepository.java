@@ -10,5 +10,11 @@ public interface DuplicateMatchRepository extends JpaRepository<DuplicateMatch, 
     @EntityGraph(attributePaths = {"lead", "matchedLead", "reviewedBy"})
     List<DuplicateMatch> findAllByOrderByCreatedAtDesc();
 
+    @EntityGraph(attributePaths = {"lead", "matchedLead", "reviewedBy"})
+    List<DuplicateMatch> findAllByOrganizationIdOrderByCreatedAtDesc(Long organizationId);
+
+    @EntityGraph(attributePaths = {"lead", "matchedLead", "reviewedBy"})
+    Optional<DuplicateMatch> findByIdAndOrganizationId(Long id, Long organizationId);
+
     Optional<DuplicateMatch> findByLeadIdAndMatchedLeadId(Long leadId, Long matchedLeadId);
 }

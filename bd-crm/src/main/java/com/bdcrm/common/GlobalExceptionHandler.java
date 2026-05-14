@@ -4,6 +4,8 @@ import jakarta.validation.ConstraintViolationException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -33,6 +35,11 @@ public class GlobalExceptionHandler {
                 .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
                 .toList();
         return build(HttpStatus.BAD_REQUEST, "Validation failed", details);
+    }
+
+    @ExceptionHandler({AuthorizationDeniedException.class, AccessDeniedException.class})
+    ResponseEntity<ApiErrorResponse> handleAccessDenied(Exception ex) {
+        return build(HttpStatus.FORBIDDEN, "Access Denied", List.of());
     }
 
     @ExceptionHandler(Exception.class)

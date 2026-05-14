@@ -1,6 +1,8 @@
 package com.bdcrm.export;
 
+import com.bdcrm.auth.SecurityUtils;
 import com.bdcrm.lead.LeadRepository;
+import com.bdcrm.lead.LeadSpecifications;
 import com.bdcrm.reporting.ReportFilterRequest;
 import com.bdcrm.reporting.ReportingService;
 import java.util.StringJoiner;
@@ -14,12 +16,15 @@ public class ExportService {
 
     private final LeadRepository leadRepository;
     private final ReportingService reportingService;
+    private final SecurityUtils securityUtils;
 
     @Transactional(readOnly = true)
     public String leadsCsv() {
         StringJoiner joiner = new StringJoiner("\n");
         joiner.add("id,companyName,contactName,status,priority,owner,template,stage");
-        leadRepository.findAll().forEach(lead -> joiner.add(String.join(",",
+        Long organizationId = securityUtils.hasPlatformRole("PLATFORM_ADMIN") ? null : securityUtils.currentOrganizationId();
+        leadRepository.findAll(org.springframework.data.jpa.domain.Specification.where(LeadSpecifications.organizationId(organizationId)))
+                .forEach(lead -> joiner.add(String.join(",",
                 String.valueOf(lead.getId()),
                 csv(lead.getCompanyName()),
                 csv(lead.getContactName()),

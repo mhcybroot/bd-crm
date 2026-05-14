@@ -16,6 +16,8 @@ import com.bdcrm.lead.LeadActivityType;
 import com.bdcrm.lead.LeadNote;
 import com.bdcrm.lead.LeadNoteRepository;
 import com.bdcrm.lead.LeadRepository;
+import com.bdcrm.lead.LeadSpecifications;
+import com.bdcrm.organization.Organization;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -48,12 +50,17 @@ public class DuplicateService {
 
     @Transactional
     public List<DuplicateCandidateResponse> rescan() {
-        List<Lead> leads = leadRepository.findAll().stream()
-                .filter(lead -> lead.getMergedIntoLeadId() == null)
+        Long organizationId = securityUtils.currentOrganizationId();
+        Organization organization = securityUtils.currentOrganizationEntity();
+        List<Lead> leads = leadRepository.findAll(
+                        org.springframework.data.jpa.domain.Specification.where(LeadSpecifications.organizationId(organizationId))
+                                .and(LeadSpecifications.notMerged()))
+                .stream()
                 .sorted(Comparator.comparing(Lead::getId))
                 .toList();
         Map<DuplicatePairKey, DuplicateMatch> existingMatches = new HashMap<>();
-        for (DuplicateMatch match : duplicateMatchRepository.findAll()) {
+        List<DuplicateMatch> currentMatches = duplicateMatchRepository.findAllByOrganizationIdOrderByCreatedAtDesc(organizationId);
+        for (DuplicateMatch match : currentMatches) {
             existingMatches.put(DuplicatePairKey.of(match.getLead(), match.getMatchedLead()), match);
         }
         List<DuplicateCandidateResponse> results = new ArrayList<>();
@@ -75,6 +82,7 @@ public class DuplicateService {
                 }
                 match.setLead(canonicalLead);
                 match.setMatchedLead(canonicalMatchedLead);
+                match.setOrganization(organization);
                 match.setMatchScore(score);
                 match.setState(DuplicateState.SUSPECTED);
                 match.setReason(buildReason(left, right));
@@ -95,14 +103,17 @@ public class DuplicateService {
 
     @Transactional(readOnly = true)
     public List<DuplicateCandidateResponse> list() {
-        return duplicateMatchRepository.findAllByOrderByCreatedAtDesc().stream()
+        List<DuplicateMatch> matches = securityUtils.hasPlatformRole("PLATFORM_ADMIN")
+                ? duplicateMatchRepository.findAllByOrderByCreatedAtDesc()
+                : duplicateMatchRepository.findAllByOrganizationIdOrderByCreatedAtDesc(securityUtils.currentOrganizationId());
+        return matches.stream()
                 .map(DuplicateCandidateResponse::from)
                 .toList();
     }
 
     @Transactional
     public DuplicateCandidateResponse updateState(Long id, DuplicateState state) {
-        DuplicateMatch match = duplicateMatchRepository.findById(id).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Duplicate match not found"));
+        DuplicateMatch match = requireMatch(id);
         match.setState(state);
         match.setReviewedBy(securityUtils.currentUserEntity());
         match.setReviewedAt(OffsetDateTime.now());
@@ -111,10 +122,13 @@ public class DuplicateService {
 
     @Transactional
     public void merge(LeadMergeRequest request) {
-        Lead source = leadRepository.findById(request.sourceLeadId()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Source lead not found"));
-        Lead target = leadRepository.findById(request.targetLeadId()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Target lead not found"));
+        Lead source = requireVisibleLead(request.sourceLeadId(), "Source lead not found");
+        Lead target = requireVisibleLead(request.targetLeadId(), "Target lead not found");
         if (source.getId().equals(target.getId())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Source and target leads must be different");
+        }
+        if (!source.getOrganization().getId().equals(target.getOrganization().getId())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Leads must belong to the same organization");
         }
         source.setMergedIntoLeadId(target.getId());
         source.setDuplicateState(DuplicateState.MERGED);
@@ -134,6 +148,7 @@ public class DuplicateService {
         }
         followupRepository.deleteAll(followupRepository.findByLeadIdOrderByStepNumberAsc(source.getId()));
         LeadMergeEvent event = new LeadMergeEvent();
+        event.setOrganization(target.getOrganization());
         event.setSourceLeadId(source.getId());
         event.setTargetLead(target);
         event.setMergedBy(securityUtils.currentUserEntity());
@@ -199,8 +214,29 @@ public class DuplicateService {
 
     private void reconcileLeadStates(List<Lead> leads, Set<Long> suspectedLeadIds) {
         for (Lead lead : leads) {
+            if (lead.getDuplicateState() == DuplicateState.MERGED) {
+                continue;
+            }
             lead.setDuplicateState(suspectedLeadIds.contains(lead.getId()) ? DuplicateState.SUSPECTED : DuplicateState.CLEAR);
         }
+    }
+
+    private DuplicateMatch requireMatch(Long id) {
+        return securityUtils.hasPlatformRole("PLATFORM_ADMIN")
+                ? duplicateMatchRepository.findById(id)
+                        .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Duplicate match not found"))
+                : duplicateMatchRepository.findByIdAndOrganizationId(id, securityUtils.currentOrganizationId())
+                        .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Duplicate match not found"));
+    }
+
+    private Lead requireVisibleLead(Long leadId, String message) {
+        Lead lead = leadRepository.findById(leadId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, message));
+        if (!securityUtils.hasPlatformRole("PLATFORM_ADMIN")
+                && !lead.getOrganization().getId().equals(securityUtils.currentOrganizationId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "You do not have access to this lead");
+        }
+        return lead;
     }
 
     private record DuplicatePairKey(Long leadId, Long matchedLeadId) {

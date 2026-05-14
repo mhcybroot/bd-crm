@@ -30,6 +30,7 @@ public class CommunicationService {
         LeadCommunication communication = new LeadCommunication();
         communication.setLead(lead);
         communication.setActor(securityUtils.currentUserEntity());
+        communication.setOrganization(lead.getOrganization());
         communication.setChannel(request.channel());
         communication.setSubject(request.subject());
         communication.setBody(request.body());

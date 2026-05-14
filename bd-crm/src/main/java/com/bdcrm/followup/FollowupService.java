@@ -69,16 +69,16 @@ public class FollowupService {
         String effectiveFilter = statusFilter == null ? "open" : statusFilter.toLowerCase();
         LocalDate today = LocalDate.now();
         User currentUser = securityUtils.currentUserEntity();
-        boolean managerView = securityUtils.hasAnyRole("ADMIN", "MANAGER");
+        boolean managerView = securityUtils.hasAnyRole("PLATFORM_ADMIN", "ORG_ADMIN", "ORG_MANAGER");
+        Long organizationId = securityUtils.hasPlatformRole("PLATFORM_ADMIN") ? null : securityUtils.currentOrganizationId();
         List<LeadFollowup> queue = switch (effectiveFilter) {
-            case "due" -> leadFollowupRepository.findByStatusInAndDueDateLessThanEqualOrderByDueDateAsc(
-                    List.of(FollowupStatus.DUE), today);
-            case "overdue" -> leadFollowupRepository.findByStatusInOrderByDueDateAsc(List.of(FollowupStatus.OVERDUE));
-            case "completed" -> leadFollowupRepository.findByStatusInOrderByDueDateAsc(List.of(FollowupStatus.COMPLETED));
-            case "upcoming" -> leadFollowupRepository.findByStatusInOrderByDueDateAsc(List.of(FollowupStatus.DUE)).stream()
+            case "due" -> followupsDueByStatus(organizationId, List.of(FollowupStatus.DUE), today);
+            case "overdue" -> followupsByStatus(organizationId, List.of(FollowupStatus.OVERDUE));
+            case "completed" -> followupsByStatus(organizationId, List.of(FollowupStatus.COMPLETED));
+            case "upcoming" -> followupsByStatus(organizationId, List.of(FollowupStatus.DUE)).stream()
                     .filter(followup -> followup.getDueDate().isAfter(today))
                     .toList();
-            default -> leadFollowupRepository.findByStatusInOrderByDueDateAsc(List.of(FollowupStatus.DUE, FollowupStatus.OVERDUE)).stream()
+            default -> followupsByStatus(organizationId, List.of(FollowupStatus.DUE, FollowupStatus.OVERDUE)).stream()
                     .filter(followup -> followup.getStatus() == FollowupStatus.OVERDUE
                             || (followup.getStatus() == FollowupStatus.DUE && !followup.getDueDate().isAfter(today)))
                     .toList();
@@ -150,6 +150,10 @@ public class FollowupService {
         }
         User newOwner = userRepository.findById(request.assignedUserId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Assignee not found"));
+        if (!securityUtils.hasPlatformRole("PLATFORM_ADMIN")
+                && !newOwner.getOrganization().getId().equals(followup.getOrganization().getId())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Assignee must belong to the same organization");
+        }
         followup.setAssignedUser(newOwner);
         followup.setNotes(request.notes());
         leadActivityService.log(
@@ -198,8 +202,13 @@ public class FollowupService {
                         && !escalationEventRepository.existsByFollowupId(followup.getId())) {
                     User escalatedTo = followup.getAssignedUser().getManager();
                     EscalationEvent event = new EscalationEvent();
+                    if (escalatedTo != null
+                            && !escalatedTo.getOrganization().getId().equals(followup.getOrganization().getId())) {
+                        escalatedTo = null;
+                    }
                     event.setFollowup(followup);
                     event.setLead(followup.getLead());
+                    event.setOrganization(followup.getOrganization());
                     event.setEscalatedToUser(escalatedTo);
                     event.setDaysOverdue((int) daysOverdue);
                     event.setReason("Follow-up exceeded overdue threshold");
@@ -227,17 +236,37 @@ public class FollowupService {
         followup.setStatus(FollowupStatus.DUE);
         followup.setChannel(step.getChannel());
         followup.setInstructions(step.getInstructions());
+        followup.setOrganization(lead.getOrganization());
         return followup;
     }
 
     private LeadFollowup requireAccessibleFollowup(Long followupId) {
-        LeadFollowup followup = leadFollowupRepository.findById(followupId)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Follow-up not found"));
+        LeadFollowup followup = securityUtils.hasPlatformRole("PLATFORM_ADMIN")
+                ? leadFollowupRepository.findById(followupId)
+                        .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Follow-up not found"))
+                : leadFollowupRepository.findByIdAndOrganizationId(followupId, securityUtils.currentOrganizationId())
+                        .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Follow-up not found"));
         User currentUser = securityUtils.currentUserEntity();
-        if (securityUtils.hasAnyRole("ADMIN", "MANAGER") || followup.getAssignedUser().getId().equals(currentUser.getId())) {
+        if (securityUtils.hasAnyRole("PLATFORM_ADMIN", "ORG_ADMIN", "ORG_MANAGER")
+                || followup.getAssignedUser().getId().equals(currentUser.getId())) {
             return followup;
         }
         throw new ApiException(HttpStatus.FORBIDDEN, "You do not have access to this follow-up");
+    }
+
+    private List<LeadFollowup> followupsByStatus(Long organizationId, List<FollowupStatus> statuses) {
+        return organizationId == null
+                ? leadFollowupRepository.findByStatusInOrderByDueDateAsc(statuses)
+                : leadFollowupRepository.findByOrganizationIdAndStatusInOrderByDueDateAsc(organizationId, statuses);
+    }
+
+    private List<LeadFollowup> followupsDueByStatus(Long organizationId, List<FollowupStatus> statuses, LocalDate dueDate) {
+        return organizationId == null
+                ? leadFollowupRepository.findByStatusInAndDueDateLessThanEqualOrderByDueDateAsc(statuses, dueDate)
+                : leadFollowupRepository.findByOrganizationIdAndStatusInAndDueDateLessThanEqualOrderByDueDateAsc(
+                        organizationId,
+                        statuses,
+                        dueDate);
     }
 
     private void ensureMutable(LeadFollowup followup) {

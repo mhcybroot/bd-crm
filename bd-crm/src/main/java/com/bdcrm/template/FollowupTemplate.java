@@ -1,10 +1,12 @@
 package com.bdcrm.template;
 
 import com.bdcrm.common.BaseEntity;
+import com.bdcrm.organization.Organization;
 import com.bdcrm.pipeline.TemplatePipelineStage;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
@@ -19,7 +21,7 @@ import lombok.Setter;
 @Table(name = "lead_followup_templates")
 public class FollowupTemplate extends BaseEntity {
 
-    @Column(nullable = false, unique = true, length = 120)
+    @Column(nullable = false, length = 120)
     private String name;
 
     @Column(length = 500)
@@ -30,6 +32,10 @@ public class FollowupTemplate extends BaseEntity {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    @ManyToOne(optional = false)
+    @jakarta.persistence.JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
 
     @OneToMany(mappedBy = "template", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("stepNumber ASC")

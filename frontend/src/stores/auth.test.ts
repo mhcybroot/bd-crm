@@ -10,7 +10,11 @@ vi.mock('@/api/auth', () => ({
       username: 'admin',
       fullName: 'Admin User',
       email: 'admin@example.com',
-      roles: ['ADMIN'],
+      organizationId: 1,
+      organizationName: 'Acme Org',
+      organizationSlug: 'acme-org',
+      platformRoles: ['PLATFORM_ADMIN'],
+      organizationRoles: ['ORG_ADMIN'],
     },
   })),
   getCurrentUser: vi.fn(async () => ({
@@ -18,7 +22,11 @@ vi.mock('@/api/auth', () => ({
     username: 'admin',
     fullName: 'Admin User',
     email: 'admin@example.com',
-    roles: ['ADMIN'],
+    organizationId: 1,
+    organizationName: 'Acme Org',
+    organizationSlug: 'acme-org',
+    platformRoles: ['PLATFORM_ADMIN'],
+    organizationRoles: ['ORG_ADMIN'],
   })),
 }))
 
@@ -45,6 +53,6 @@ describe('auth store', () => {
     await store.bootstrap()
 
     expect(store.initialized).toBe(true)
-    expect(store.user?.roles).toContain('ADMIN')
+    expect(store.roles).toContain('PLATFORM_ADMIN')
   })
 })

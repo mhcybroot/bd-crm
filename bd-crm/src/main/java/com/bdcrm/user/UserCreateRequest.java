@@ -11,5 +11,6 @@ public record UserCreateRequest(
         @NotBlank String fullName,
         @Email @NotBlank String email,
         Long managerId,
+        Long organizationId,
         @NotEmpty Set<RoleName> roles) {
 }

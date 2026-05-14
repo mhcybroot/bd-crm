@@ -16,7 +16,9 @@ public class SavedViewService {
     @Transactional(readOnly = true)
     public List<SavedViewResponse> list(String pageKey) {
         Long userId = securityUtils.currentUserEntity().getId();
-        return savedViewRepository.findByPageKeyAndOwnerIdOrPageKeyAndSharedTrueOrderByUpdatedAtDesc(pageKey, userId, pageKey).stream()
+        Long organizationId = securityUtils.currentOrganizationId();
+        return savedViewRepository.findByOrganizationIdAndPageKeyAndOwnerIdOrOrganizationIdAndPageKeyAndSharedTrueOrderByUpdatedAtDesc(
+                        organizationId, pageKey, userId, organizationId, pageKey).stream()
                 .map(SavedViewResponse::from)
                 .toList();
     }
@@ -25,9 +27,10 @@ public class SavedViewService {
     public SavedViewResponse save(SavedViewRequest request) {
         SavedView view = new SavedView();
         view.setOwner(securityUtils.currentUserEntity());
+        view.setOrganization(securityUtils.currentOrganizationEntity());
         view.setPageKey(request.pageKey().trim());
         view.setName(request.name().trim());
-        view.setShared(request.shared() && securityUtils.hasAnyRole("ADMIN", "MANAGER"));
+        view.setShared(request.shared() && securityUtils.hasAnyRole("PLATFORM_ADMIN", "ORG_ADMIN", "ORG_MANAGER"));
         view.setConfigJson(request.configJson());
         return SavedViewResponse.from(savedViewRepository.save(view));
     }

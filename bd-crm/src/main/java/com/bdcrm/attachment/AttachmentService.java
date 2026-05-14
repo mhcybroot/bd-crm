@@ -55,6 +55,7 @@ public class AttachmentService {
             AttachmentRecord record = new AttachmentRecord();
             record.setLead(lead);
             record.setUploadedBy(securityUtils.currentUserEntity());
+            record.setOrganization(lead.getOrganization());
             record.setOriginalFileName(file.getOriginalFilename());
             record.setStoredFileName(storedName);
             record.setContentType(file.getContentType());
@@ -74,6 +75,10 @@ public class AttachmentService {
     public Resource download(Long attachmentId) {
         AttachmentRecord attachment = attachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Attachment not found"));
+        if (!securityUtils.hasPlatformRole("PLATFORM_ADMIN")
+                && !attachment.getOrganization().getId().equals(securityUtils.currentOrganizationId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "You do not have access to this attachment");
+        }
         return new FileSystemResource(attachment.getStoragePath());
     }
 
@@ -87,6 +92,7 @@ public class AttachmentService {
         DocumentRecord document = documentRepository.findByAttachmentId(attachmentId).orElseGet(DocumentRecord::new);
         document.setAttachment(attachment);
         document.setLead(attachment.getLead());
+        document.setOrganization(attachment.getOrganization());
         document.setTitle(request.title().trim());
         document.setStatus(request.status());
         document = documentRepository.save(document);

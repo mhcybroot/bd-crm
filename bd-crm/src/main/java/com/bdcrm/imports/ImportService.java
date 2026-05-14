@@ -149,6 +149,7 @@ public class ImportService {
 
         ImportJob job = new ImportJob();
         job.setRequestedBy(securityUtils.currentUserEntity());
+        job.setOrganization(securityUtils.currentOrganizationEntity());
         job.setFileName(file.getOriginalFilename());
         job.setStatus(errors.isEmpty() ? "COMPLETED" : "COMPLETED_WITH_ERRORS");
         job.setSummaryJson("{\"created\":" + created
@@ -392,11 +393,16 @@ public class ImportService {
         if (normalized == null) {
             return null;
         }
+        Long organizationId = securityUtils.currentOrganizationId();
         Optional<User> byId = normalized.chars().allMatch(Character::isDigit)
-                ? userRepository.findById(Long.parseLong(normalized))
+                ? userRepository.findByIdAndOrganizationId(Long.parseLong(normalized), organizationId)
                 : Optional.empty();
-        Optional<User> byUsername = byId.isPresent() ? byId : userRepository.findByUsernameIgnoreCase(normalized);
-        Optional<User> resolved = byUsername.isPresent() ? byUsername : userRepository.findByEmailIgnoreCase(normalized);
+        Optional<User> byUsername = byId.isPresent()
+                ? byId
+                : userRepository.findByUsernameIgnoreCaseAndOrganizationId(normalized, organizationId);
+        Optional<User> resolved = byUsername.isPresent()
+                ? byUsername
+                : userRepository.findByEmailIgnoreCaseAndOrganizationId(normalized, organizationId);
         if (resolved.isEmpty()) {
             issues.add(new LeadImportValidationIssue("assignedUserId", "Assignee could not be resolved"));
             return null;
@@ -409,10 +415,13 @@ public class ImportService {
         if (normalized == null) {
             return null;
         }
+        Long organizationId = securityUtils.currentOrganizationId();
         Optional<FollowupTemplate> byId = normalized.chars().allMatch(Character::isDigit)
-                ? templateRepository.findById(Long.parseLong(normalized))
+                ? templateRepository.findByIdAndOrganizationId(Long.parseLong(normalized), organizationId)
                 : Optional.empty();
-        Optional<FollowupTemplate> resolved = byId.isPresent() ? byId : templateRepository.findByNameIgnoreCase(normalized);
+        Optional<FollowupTemplate> resolved = byId.isPresent()
+                ? byId
+                : templateRepository.findByNameIgnoreCaseAndOrganizationId(normalized, organizationId);
         if (resolved.isEmpty()) {
             issues.add(new LeadImportValidationIssue("templateId", "Follow-up template could not be resolved"));
             return null;
@@ -421,12 +430,15 @@ public class ImportService {
     }
 
     private List<Lead> findMatches(String email, String phone) {
+        Long organizationId = securityUtils.currentOrganizationId();
         Map<Long, Lead> matches = new LinkedHashMap<>();
         if (email != null) {
-            leadRepository.findAllByEmailIgnoreCase(email).forEach(lead -> matches.put(lead.getId(), lead));
+            leadRepository.findAllByEmailIgnoreCaseAndOrganizationId(email, organizationId)
+                    .forEach(lead -> matches.put(lead.getId(), lead));
         }
         if (phone != null) {
-            leadRepository.findAllByPhoneIgnoreCase(phone).forEach(lead -> matches.put(lead.getId(), lead));
+            leadRepository.findAllByPhoneIgnoreCaseAndOrganizationId(phone, organizationId)
+                    .forEach(lead -> matches.put(lead.getId(), lead));
         }
         return matches.values().stream()
                 .filter(lead -> lead.getMergedIntoLeadId() == null)

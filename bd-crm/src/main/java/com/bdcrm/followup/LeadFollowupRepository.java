@@ -15,10 +15,22 @@ public interface LeadFollowupRepository extends JpaRepository<LeadFollowup, Long
     Optional<LeadFollowup> findById(Long id);
 
     @EntityGraph(attributePaths = {"lead", "lead.assignedUser", "assignedUser"})
+    Optional<LeadFollowup> findByIdAndOrganizationId(Long id, Long organizationId);
+
+    @EntityGraph(attributePaths = {"lead", "lead.assignedUser", "assignedUser"})
     List<LeadFollowup> findByStatusInAndDueDateLessThanEqualOrderByDueDateAsc(List<FollowupStatus> statuses, LocalDate dueDate);
 
     @EntityGraph(attributePaths = {"lead", "lead.assignedUser", "assignedUser"})
     List<LeadFollowup> findByStatusInOrderByDueDateAsc(List<FollowupStatus> statuses);
+
+    @EntityGraph(attributePaths = {"lead", "lead.assignedUser", "assignedUser"})
+    List<LeadFollowup> findByOrganizationIdAndStatusInAndDueDateLessThanEqualOrderByDueDateAsc(
+            Long organizationId,
+            List<FollowupStatus> statuses,
+            LocalDate dueDate);
+
+    @EntityGraph(attributePaths = {"lead", "lead.assignedUser", "assignedUser"})
+    List<LeadFollowup> findByOrganizationIdAndStatusInOrderByDueDateAsc(Long organizationId, List<FollowupStatus> statuses);
 
     boolean existsByLeadIdAndStepNumber(Long leadId, int stepNumber);
 }

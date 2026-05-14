@@ -7,7 +7,11 @@ public record AuthResponse(
         String username,
         String fullName,
         String email,
-        Set<String> roles) {
+        Long organizationId,
+        String organizationName,
+        String organizationSlug,
+        Set<String> platformRoles,
+        Set<String> organizationRoles) {
 
     public static AuthResponse from(AuthenticatedUser user) {
         return new AuthResponse(
@@ -15,6 +19,10 @@ public record AuthResponse(
                 user.getUsername(),
                 user.fullName(),
                 user.email(),
-                user.roles());
+                user.organizationId(),
+                user.organizationName(),
+                user.organizationSlug(),
+                user.platformRoles(),
+                user.organizationRoles());
     }
 }

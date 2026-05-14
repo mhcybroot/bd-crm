@@ -34,10 +34,11 @@ const navItems = computed(() =>
     { title: 'Leads', to: '/leads', icon: 'mdi-domain' },
     { title: 'Follow-ups', to: '/followups', icon: 'mdi-calendar-clock-outline' },
     { title: 'Pipeline Board', to: '/board', icon: 'mdi-view-kanban-outline' },
-    { title: 'Duplicates', to: '/duplicates', icon: 'mdi-content-copy', roles: ['ADMIN', 'MANAGER'] },
-    { title: 'Templates', to: '/templates', icon: 'mdi-timeline-outline', roles: ['ADMIN'] },
-    { title: 'Reports', to: '/reports', icon: 'mdi-chart-bar', roles: ['ADMIN', 'MANAGER'] },
-    { title: 'Users', to: '/users', icon: 'mdi-account-group-outline', roles: ['ADMIN'] },
+    { title: 'Duplicates', to: '/duplicates', icon: 'mdi-content-copy', roles: ['PLATFORM_ADMIN', 'ORG_ADMIN', 'ORG_MANAGER'] },
+    { title: 'Organizations', to: '/organizations', icon: 'mdi-office-building-cog-outline', roles: ['PLATFORM_ADMIN'] },
+    { title: 'Templates', to: '/templates', icon: 'mdi-timeline-outline', roles: ['PLATFORM_ADMIN', 'ORG_ADMIN'] },
+    { title: 'Reports', to: '/reports', icon: 'mdi-chart-bar', roles: ['PLATFORM_ADMIN', 'ORG_ADMIN', 'ORG_MANAGER'] },
+    { title: 'Users', to: '/users', icon: 'mdi-account-group-outline', roles: ['PLATFORM_ADMIN', 'ORG_ADMIN'] },
   ] as NavItem[]).filter((item) => !item.roles || authStore.hasRole(...item.roles)),
 )
 
@@ -179,7 +180,8 @@ onMounted(loadNotifications)
       </v-menu>
       <div class="text-right mr-4">
         <div class="text-body-2 font-weight-medium">{{ authStore.user?.fullName }}</div>
-        <div class="text-caption text-medium-emphasis">{{ authStore.user?.roles.join(', ') }}</div>
+        <div class="text-caption text-medium-emphasis">{{ authStore.user?.organizationName }}</div>
+        <div class="text-caption text-medium-emphasis">{{ authStore.roles.join(', ') }}</div>
       </div>
       <v-btn icon="mdi-logout" variant="text" @click="handleLogout" />
     </v-app-bar>

@@ -7,6 +7,7 @@ import com.bdcrm.followup.LeadFollowup;
 import com.bdcrm.followup.LeadFollowupRepository;
 import com.bdcrm.lead.Lead;
 import com.bdcrm.lead.LeadRepository;
+import com.bdcrm.lead.LeadSpecifications;
 import com.bdcrm.user.User;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -28,8 +29,9 @@ public class DashboardService {
     @Transactional(readOnly = true)
     public DashboardSummaryResponse summary(DashboardFilterRequest filter) {
         User currentUser = securityUtils.currentUserEntity();
-        boolean managerView = securityUtils.hasAnyRole("ADMIN", "MANAGER");
-        List<Lead> leads = leadRepository.findAll().stream()
+        boolean managerView = securityUtils.hasAnyRole("PLATFORM_ADMIN", "ORG_ADMIN", "ORG_MANAGER");
+        Long organizationId = securityUtils.hasPlatformRole("PLATFORM_ADMIN") ? null : securityUtils.currentOrganizationId();
+        List<Lead> leads = leadRepository.findAll(org.springframework.data.jpa.domain.Specification.where(LeadSpecifications.organizationId(organizationId))).stream()
                 .filter(lead -> {
                     LocalDate created = lead.getCreatedAt().toLocalDate();
                     return !created.isBefore(filter.effectiveDateFrom()) && !created.isAfter(filter.effectiveDateTo());
@@ -38,7 +40,12 @@ public class DashboardService {
                 .filter(lead -> filter.leadStatus() == null || lead.getStatus() == filter.leadStatus())
                 .filter(lead -> managerView || lead.getAssignedUser().getId().equals(currentUser.getId()))
                 .toList();
-        List<LeadFollowup> filteredFollowups = leadFollowupRepository.findAll().stream()
+        List<LeadFollowup> filteredFollowups = (organizationId == null
+                ? leadFollowupRepository.findAll()
+                : leadFollowupRepository.findByOrganizationIdAndStatusInOrderByDueDateAsc(
+                        organizationId,
+                        List.of(FollowupStatus.DUE, FollowupStatus.OVERDUE, FollowupStatus.COMPLETED, FollowupStatus.SKIPPED, FollowupStatus.CANCELLED)))
+                .stream()
                 .filter(followup -> leads.stream().anyMatch(lead -> lead.getId().equals(followup.getLead().getId())))
                 .filter(followup -> filter.followupOutcome() == null || followup.getOutcome() == filter.followupOutcome())
                 .filter(followup -> managerView || followup.getAssignedUser().getId().equals(currentUser.getId()))
@@ -71,9 +78,15 @@ public class DashboardService {
     @Transactional(readOnly = true)
     public List<DueFollowupResponse> workQueue(DashboardFilterRequest filter) {
         User currentUser = securityUtils.currentUserEntity();
-        boolean managerView = securityUtils.hasAnyRole("ADMIN", "MANAGER");
+        boolean managerView = securityUtils.hasAnyRole("PLATFORM_ADMIN", "ORG_ADMIN", "ORG_MANAGER");
+        Long organizationId = securityUtils.hasPlatformRole("PLATFORM_ADMIN") ? null : securityUtils.currentOrganizationId();
         LocalDate today = LocalDate.now();
-        return leadFollowupRepository.findByStatusInOrderByDueDateAsc(List.of(FollowupStatus.DUE, FollowupStatus.OVERDUE)).stream()
+        return (organizationId == null
+                ? leadFollowupRepository.findByStatusInOrderByDueDateAsc(List.of(FollowupStatus.DUE, FollowupStatus.OVERDUE))
+                : leadFollowupRepository.findByOrganizationIdAndStatusInOrderByDueDateAsc(
+                        organizationId,
+                        List.of(FollowupStatus.DUE, FollowupStatus.OVERDUE)))
+                .stream()
                 .filter(followup -> followup.getStatus() == FollowupStatus.OVERDUE
                         || (followup.getStatus() == FollowupStatus.DUE && !followup.getDueDate().isAfter(today)))
                 .filter(followup -> {

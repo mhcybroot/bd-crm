@@ -10,7 +10,9 @@ export const useAuthStore = defineStore('auth', () => {
   const initialized = ref(false)
 
   const isAuthenticated = computed(() => !!token.value && !!user.value)
-  const roles = computed<RoleName[]>(() => user.value?.roles ?? [])
+  const roles = computed<RoleName[]>(() =>
+    [...(user.value?.platformRoles ?? []), ...(user.value?.organizationRoles ?? [])] as RoleName[],
+  )
 
   function hasRole(...required: RoleName[]) {
     return required.some((role) => roles.value.includes(role))

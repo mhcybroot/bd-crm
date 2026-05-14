@@ -10,5 +10,8 @@ public interface NotificationEventRepository extends JpaRepository<NotificationE
     @EntityGraph(attributePaths = {"lead", "followup"})
     List<NotificationEvent> findByUserIdOrderByCreatedAtDesc(Long userId);
 
+    @EntityGraph(attributePaths = {"lead", "followup"})
+    java.util.Optional<NotificationEvent> findByIdAndUserId(Long id, Long userId);
+
     boolean existsByUserIdAndTypeAndFollowupIdAndCreatedAtAfter(Long userId, String type, Long followupId, OffsetDateTime createdAt);
 }

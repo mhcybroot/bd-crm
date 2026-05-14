@@ -2,6 +2,7 @@ package com.bdcrm.lead;
 
 import com.bdcrm.common.BaseEntity;
 import com.bdcrm.duplicate.DuplicateState;
+import com.bdcrm.organization.Organization;
 import com.bdcrm.pipeline.TemplatePipelineStage;
 import com.bdcrm.template.FollowupTemplate;
 import com.bdcrm.user.User;
@@ -58,6 +59,10 @@ public class Lead extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "duplicate_state", nullable = false, length = 32)
     private DuplicateState duplicateState = DuplicateState.CLEAR;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_user_id", nullable = false)

@@ -30,13 +30,16 @@ public class NotificationService {
     @Transactional(readOnly = true)
     public List<NotificationResponse> listForCurrentUser() {
         return notificationEventRepository.findByUserIdOrderByCreatedAtDesc(securityUtils.currentUserEntity().getId()).stream()
+                .filter(event -> securityUtils.hasPlatformRole("PLATFORM_ADMIN")
+                        || event.getOrganization().getId().equals(securityUtils.currentOrganizationId()))
                 .map(NotificationResponse::from)
                 .toList();
     }
 
     @Transactional
     public NotificationResponse markRead(Long notificationId) {
-        NotificationEvent event = notificationEventRepository.findById(notificationId).orElseThrow();
+        NotificationEvent event = notificationEventRepository.findByIdAndUserId(notificationId, securityUtils.currentUserEntity().getId())
+                .orElseThrow();
         event.setReadAt(OffsetDateTime.now());
         return NotificationResponse.from(event);
     }
@@ -59,6 +62,7 @@ public class NotificationService {
         NotificationPreference preference = preferenceFor(user);
         NotificationEvent event = new NotificationEvent();
         event.setUser(user);
+        event.setOrganization(user.getOrganization());
         event.setType(type);
         event.setTitle(title);
         event.setMessage(message);
@@ -117,10 +121,11 @@ public class NotificationService {
     }
 
     private NotificationPreference preferenceFor(User user) {
-        return preferenceRepository.findByUserId(user.getId())
+        return preferenceRepository.findByUserIdAndOrganizationId(user.getId(), user.getOrganization().getId())
                 .orElseGet(() -> {
                     NotificationPreference preference = new NotificationPreference();
                     preference.setUser(user);
+                    preference.setOrganization(user.getOrganization());
                     preference.setEmailEnabled(crmProperties.getNotifications().isEmailEnabled());
                     return preferenceRepository.save(preference);
                 });

@@ -54,6 +54,7 @@ public class LeadService {
         Lead lead = new Lead();
         apply(lead, request.companyName(), request.contactName(), request.email(), request.phone(), request.source(),
                 request.description(), request.priority(), assignedUser, template);
+        lead.setOrganization(actor.getOrganization());
         lead = leadRepository.save(lead);
         followupService.syncFromTemplate(lead);
         qualificationService.getOrCreateEntity(lead);
@@ -89,10 +90,12 @@ public class LeadService {
             int page,
             int size) {
         User currentUser = securityUtils.currentUserEntity();
-        Long effectiveAssignedUserId = securityUtils.hasAnyRole("ADMIN", "MANAGER")
+        Long effectiveAssignedUserId = securityUtils.hasAnyRole("PLATFORM_ADMIN", "ORG_ADMIN", "ORG_MANAGER")
                 ? assignedUserId
                 : currentUser.getId();
-        Specification<Lead> spec = Specification.where(LeadSpecifications.hasStatus(status))
+        Long effectiveOrganizationId = securityUtils.hasPlatformRole("PLATFORM_ADMIN") ? null : currentUser.getOrganization().getId();
+        Specification<Lead> spec = Specification.where(LeadSpecifications.organizationId(effectiveOrganizationId))
+                .and(LeadSpecifications.hasStatus(status))
                 .and(LeadSpecifications.assignedTo(effectiveAssignedUserId))
                 .and(LeadSpecifications.search(search));
         Page<Lead> result = leadRepository.findAll(spec, PageRequest.of(page, size, Sort.by("updatedAt").descending()));
@@ -165,6 +168,7 @@ public class LeadService {
         LeadNote note = new LeadNote();
         note.setLead(lead);
         note.setAuthor(actor);
+        note.setOrganization(lead.getOrganization());
         note.setBody(request.body().trim());
         note = leadNoteRepository.save(note);
         leadActivityService.log(lead, actor, LeadActivityType.NOTE_ADDED, "Added a note");
@@ -191,6 +195,9 @@ public class LeadService {
         lead.setPriority(priority == null ? LeadPriority.MEDIUM : priority);
         lead.setAssignedUser(assignedUser);
         lead.setTemplate(template);
+        if (lead.getOrganization() == null) {
+            lead.setOrganization(assignedUser.getOrganization());
+        }
         if (lead.getDuplicateState() == null) {
             lead.setDuplicateState(DuplicateState.CLEAR);
         }
@@ -204,14 +211,25 @@ public class LeadService {
         Lead lead = leadRepository.findById(leadId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Lead not found"));
         User currentUser = securityUtils.currentUserEntity();
-        if (securityUtils.hasAnyRole("ADMIN", "MANAGER") || lead.getAssignedUser().getId().equals(currentUser.getId())) {
+        if (securityUtils.hasPlatformRole("PLATFORM_ADMIN")) {
+            return lead;
+        }
+        if (!lead.getOrganization().getId().equals(currentUser.getOrganization().getId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "You do not have access to this lead");
+        }
+        if (securityUtils.hasAnyRole("ORG_ADMIN", "ORG_MANAGER") || lead.getAssignedUser().getId().equals(currentUser.getId())) {
             return lead;
         }
         throw new ApiException(HttpStatus.FORBIDDEN, "You do not have access to this lead");
     }
 
     private User requireUser(Long userId) {
-        return userRepository.findById(userId)
+        if (securityUtils.hasPlatformRole("PLATFORM_ADMIN")) {
+            return userRepository.findById(userId)
+                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
+        }
+        Long organizationId = securityUtils.currentOrganizationId();
+        return userRepository.findByIdAndOrganizationId(userId, organizationId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
     }
 

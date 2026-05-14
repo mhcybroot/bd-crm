@@ -20,25 +20,25 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('PLATFORM_ADMIN', 'ORG_ADMIN', 'ORG_MANAGER')")
     public List<UserResponse> listUsers() {
         return userService.listUsers();
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('PLATFORM_ADMIN', 'ORG_ADMIN')")
     public UserResponse createUser(@Valid @RequestBody UserCreateRequest request) {
         return userService.createUser(request);
     }
 
     @PatchMapping("/{userId}/roles")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('PLATFORM_ADMIN', 'ORG_ADMIN')")
     public UserResponse updateRoles(@PathVariable Long userId, @Valid @RequestBody UserRoleUpdateRequest request) {
         return userService.updateRoles(userId, request);
     }
 
     @PatchMapping("/{userId}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('PLATFORM_ADMIN', 'ORG_ADMIN')")
     public UserResponse updateStatus(@PathVariable Long userId, @RequestBody UserStatusUpdateRequest request) {
         return userService.updateStatus(userId, request);
     }

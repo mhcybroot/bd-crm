@@ -2,6 +2,7 @@ package com.bdcrm.duplicate;
 
 import com.bdcrm.common.BaseEntity;
 import com.bdcrm.lead.Lead;
+import com.bdcrm.organization.Organization;
 import com.bdcrm.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -28,6 +29,10 @@ public class LeadMergeEvent extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "merged_by_user_id", nullable = false)
     private User mergedBy;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
 
     @Column(nullable = false, columnDefinition = "text")
     private String summary;

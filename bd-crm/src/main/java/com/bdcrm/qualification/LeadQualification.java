@@ -2,6 +2,7 @@ package com.bdcrm.qualification;
 
 import com.bdcrm.common.BaseEntity;
 import com.bdcrm.lead.Lead;
+import com.bdcrm.organization.Organization;
 import com.bdcrm.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -51,6 +52,10 @@ public class LeadQualification extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "updated_by_user_id")
     private User updatedBy;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
 
     @Column(name = "qualification_updated_at")
     private OffsetDateTime qualificationUpdatedAt;

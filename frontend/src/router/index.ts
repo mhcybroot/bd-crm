@@ -9,6 +9,7 @@ import LeadFormView from '@/views/LeadFormView.vue'
 import FollowupsView from '@/views/FollowupsView.vue'
 import TemplatesView from '@/views/TemplatesView.vue'
 import ReportsView from '@/views/ReportsView.vue'
+import OrganizationsView from '@/views/OrganizationsView.vue'
 import UsersView from '@/views/UsersView.vue'
 import UnauthorizedView from '@/views/UnauthorizedView.vue'
 import CommandCenterView from '@/views/CommandCenterView.vue'
@@ -42,10 +43,11 @@ const router = createRouter({
         { path: 'leads/:id/edit', component: LeadFormView },
         { path: 'followups', component: FollowupsView },
         { path: 'board', component: PipelineBoardView },
-        { path: 'duplicates', component: DuplicatesView, meta: { roles: ['ADMIN', 'MANAGER'] } },
-        { path: 'templates', component: TemplatesView, meta: { roles: ['ADMIN'] } },
-        { path: 'reports', component: ReportsView, meta: { roles: ['ADMIN', 'MANAGER'] } },
-        { path: 'users', component: UsersView, meta: { roles: ['ADMIN'] } },
+        { path: 'duplicates', component: DuplicatesView, meta: { roles: ['PLATFORM_ADMIN', 'ORG_ADMIN', 'ORG_MANAGER'] } },
+        { path: 'organizations', component: OrganizationsView, meta: { roles: ['PLATFORM_ADMIN'] } },
+        { path: 'templates', component: TemplatesView, meta: { roles: ['PLATFORM_ADMIN', 'ORG_ADMIN'] } },
+        { path: 'reports', component: ReportsView, meta: { roles: ['PLATFORM_ADMIN', 'ORG_ADMIN', 'ORG_MANAGER'] } },
+        { path: 'users', component: UsersView, meta: { roles: ['PLATFORM_ADMIN', 'ORG_ADMIN'] } },
       ],
     },
   ],

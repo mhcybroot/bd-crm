@@ -2,6 +2,7 @@ package com.bdcrm.followup;
 
 import com.bdcrm.common.BaseEntity;
 import com.bdcrm.lead.Lead;
+import com.bdcrm.organization.Organization;
 import com.bdcrm.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,6 +30,10 @@ public class EscalationEvent extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "escalated_to_user_id")
     private User escalatedToUser;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
 
     @Column(name = "days_overdue", nullable = false)
     private int daysOverdue;

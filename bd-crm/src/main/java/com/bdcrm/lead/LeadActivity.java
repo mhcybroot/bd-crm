@@ -1,6 +1,7 @@
 package com.bdcrm.lead;
 
 import com.bdcrm.common.BaseEntity;
+import com.bdcrm.organization.Organization;
 import com.bdcrm.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,6 +27,10 @@ public class LeadActivity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "actor_id", nullable = false)
     private User actor;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)

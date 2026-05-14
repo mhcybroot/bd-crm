@@ -1,4 +1,5 @@
-export type RoleName = 'ADMIN' | 'MANAGER' | 'REP'
+export type RoleName = 'PLATFORM_ADMIN' | 'ORG_ADMIN' | 'ORG_MANAGER' | 'ORG_REP'
+export type OrganizationStatus = 'ACTIVE' | 'SUSPENDED' | 'ARCHIVED'
 export type LeadStatus = 'NEW' | 'IN_PROGRESS' | 'QUALIFIED' | 'WON' | 'LOST' | 'DORMANT'
 export type LeadPriority = 'LOW' | 'MEDIUM' | 'HIGH'
 export type FollowupStatus = 'DUE' | 'OVERDUE' | 'COMPLETED' | 'SKIPPED' | 'CANCELLED'
@@ -27,7 +28,11 @@ export interface AuthResponse {
   username: string
   fullName: string
   email: string
-  roles: RoleName[]
+  organizationId: number
+  organizationName: string
+  organizationSlug: string
+  platformRoles: RoleName[]
+  organizationRoles: RoleName[]
 }
 
 export interface AuthSessionResponse {
@@ -226,7 +231,49 @@ export interface UserResponse {
   email: string
   active: boolean
   managerId: number | null
+  organizationId: number
+  organizationName: string
   roles: RoleName[]
+}
+
+export interface OrganizationResponse {
+  id: number
+  slug: string
+  name: string
+  status: OrganizationStatus
+  timezone: string
+  locale: string
+  contactEmail: string
+  planCode: string
+  dataRetentionDays: number
+}
+
+export interface OrganizationBootstrapAdminRequest {
+  username: string
+  password: string
+  fullName: string
+  email: string
+}
+
+export interface OrganizationRequest {
+  slug: string
+  name: string
+  status: OrganizationStatus
+  timezone: string
+  locale: string
+  contactEmail: string
+  planCode: string
+  dataRetentionDays: number
+}
+
+export interface OrganizationBootstrapRequest {
+  organization: OrganizationRequest
+  adminUser: OrganizationBootstrapAdminRequest
+}
+
+export interface OrganizationBootstrapResponse {
+  organization: OrganizationResponse
+  firstAdminUser: UserResponse
 }
 
 export interface PerformanceRepResponse {
@@ -593,6 +640,7 @@ export interface UserCreateRequest {
   fullName: string
   email: string
   managerId: number | null
+  organizationId: number | null
   roles: RoleName[]
 }
 

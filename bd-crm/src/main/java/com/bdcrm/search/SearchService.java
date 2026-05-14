@@ -1,6 +1,7 @@
 package com.bdcrm.search;
 
 import com.bdcrm.attachment.AttachmentRecordRepository;
+import com.bdcrm.auth.SecurityUtils;
 import com.bdcrm.followup.LeadFollowupRepository;
 import com.bdcrm.lead.LeadNoteRepository;
 import com.bdcrm.lead.LeadActivityRepository;
@@ -27,6 +28,7 @@ public class SearchService {
     private final LeadActivityRepository activityRepository;
     private final LeadFollowupRepository followupRepository;
     private final AttachmentRecordRepository attachmentRepository;
+    private final SecurityUtils securityUtils;
 
     @Transactional(readOnly = true)
     public GlobalSearchResponse search(
@@ -39,7 +41,9 @@ public class SearchService {
             LocalDate dateFrom,
             LocalDate dateTo) {
         String query = normalize(q);
-        Specification<Lead> leadSpec = Specification.where(LeadSpecifications.notMerged())
+        Long organizationId = securityUtils.hasPlatformRole("PLATFORM_ADMIN") ? null : securityUtils.currentOrganizationId();
+        Specification<Lead> leadSpec = Specification.where(LeadSpecifications.organizationId(organizationId))
+                .and(LeadSpecifications.notMerged())
                 .and(LeadSpecifications.assignedTo(owner))
                 .and(LeadSpecifications.hasStatus(status))
                 .and(LeadSpecifications.currentStage(stageId))
@@ -53,6 +57,7 @@ public class SearchService {
                         .limit(10)
                         .toList(),
                 noteRepository.findAll().stream()
+                        .filter(note -> organizationId == null || note.getOrganization().getId().equals(organizationId))
                         .filter(note -> matchesLeadFilters(note.getLead(), owner, status, stageId, source, dateFrom, dateTo))
                         .filter(note -> query.isBlank()
                                 || contains(note.getBody(), query)
@@ -67,6 +72,7 @@ public class SearchService {
                         .limit(10)
                         .toList(),
                 activityRepository.findAll().stream()
+                        .filter(activity -> organizationId == null || activity.getOrganization().getId().equals(organizationId))
                         .filter(activity -> matchesLeadFilters(activity.getLead(), owner, status, stageId, source, dateFrom, dateTo))
                         .filter(activity -> query.isBlank() || contains(activity.getDescription(), query))
                         .map(activity -> new GlobalSearchResponse.SearchItem(
@@ -78,6 +84,7 @@ public class SearchService {
                         .limit(10)
                         .toList(),
                 followupRepository.findAll().stream()
+                        .filter(followup -> organizationId == null || followup.getOrganization().getId().equals(organizationId))
                         .filter(followup -> matchesLeadFilters(followup.getLead(), owner, status, stageId, source, dateFrom, dateTo))
                         .filter(followup -> query.isBlank()
                                 || contains(followup.getNotes(), query)
@@ -97,6 +104,8 @@ public class SearchService {
                         .limit(10)
                         .toList(),
                 attachmentRepository.findAll().stream()
+                        .filter(attachment -> organizationId == null || (attachment.getOrganization() != null
+                                && attachment.getOrganization().getId().equals(organizationId)))
                         .filter(attachment -> query.isBlank() || contains(attachment.getOriginalFileName(), query))
                         .map(attachment -> new GlobalSearchResponse.SearchItem("ATTACHMENT", attachment.getId(), attachment.getLead() != null ? attachment.getLead().getId() : null, attachment.getOriginalFileName(), attachment.getContentType()))
                         .limit(10)

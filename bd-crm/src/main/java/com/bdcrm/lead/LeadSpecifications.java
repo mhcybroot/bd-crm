@@ -19,6 +19,10 @@ public final class LeadSpecifications {
         return (root, query, builder) -> userId == null ? null : builder.equal(root.get("assignedUser").get("id"), userId);
     }
 
+    public static Specification<Lead> organizationId(Long organizationId) {
+        return (root, query, builder) -> organizationId == null ? null : builder.equal(root.get("organization").get("id"), organizationId);
+    }
+
     public static Specification<Lead> template(Long templateId) {
         return (root, query, builder) -> templateId == null ? null : builder.equal(root.get("template").get("id"), templateId);
     }

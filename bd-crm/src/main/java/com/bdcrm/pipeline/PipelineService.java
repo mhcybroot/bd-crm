@@ -1,5 +1,6 @@
 package com.bdcrm.pipeline;
 
+import com.bdcrm.auth.SecurityUtils;
 import com.bdcrm.common.ApiException;
 import com.bdcrm.lead.Lead;
 import com.bdcrm.lead.LeadActivityService;
@@ -34,6 +35,7 @@ public class PipelineService {
     private final LeadRepository leadRepository;
     private final FollowupTemplateRepository templateRepository;
     private final LeadActivityService leadActivityService;
+    private final SecurityUtils securityUtils;
 
     @Transactional(readOnly = true)
     public PipelineTemplateResponse forTemplate(Long templateId) {
@@ -97,6 +99,7 @@ public class PipelineService {
             if (stage == null) {
                 stage = new TemplatePipelineStage();
                 stage.setTemplate(template);
+                stage.setOrganization(template.getOrganization());
             }
             stage.setName(request.name().trim());
             stage.setStageOrder(request.stageOrder());
@@ -143,6 +146,7 @@ public class PipelineService {
         history.setLead(lead);
         history.setStage(stage);
         history.setChangedBy(actor);
+        history.setOrganization(lead.getOrganization());
         history.setChangeNote(note);
         history.setEnteredAt(OffsetDateTime.now());
         historyRepository.save(history);
@@ -163,7 +167,9 @@ public class PipelineService {
     }
 
     private FollowupTemplate requireTemplate(Long templateId) {
-        return templateRepository.findById(templateId)
+        return (securityUtils.hasPlatformRole("PLATFORM_ADMIN")
+                        ? templateRepository.findById(templateId)
+                        : templateRepository.findByIdAndOrganizationId(templateId, securityUtils.currentOrganizationId()))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Template not found"));
     }
 
@@ -171,7 +177,8 @@ public class PipelineService {
         PipelineBoardFilterRequest effectiveFilters = filters == null
                 ? new PipelineBoardFilterRequest(null, null, null, null, null, null, null)
                 : filters;
-        return Specification.where(LeadSpecifications.template(templateId))
+        return Specification.where(LeadSpecifications.organizationId(securityUtils.hasPlatformRole("PLATFORM_ADMIN") ? null : securityUtils.currentOrganizationId()))
+                .and(LeadSpecifications.template(templateId))
                 .and(LeadSpecifications.currentStage(stageId))
                 .and(LeadSpecifications.notMerged())
                 .and(LeadSpecifications.search(effectiveFilters.search()))

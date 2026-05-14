@@ -15,7 +15,7 @@ public class AuditController {
     private final AuditEventService auditEventService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('PLATFORM_ADMIN', 'ORG_ADMIN', 'ORG_MANAGER')")
     public List<AuditEventResponse> latest() {
         return auditEventService.latest();
     }

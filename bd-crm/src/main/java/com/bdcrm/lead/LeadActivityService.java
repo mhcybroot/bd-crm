@@ -14,6 +14,7 @@ public class LeadActivityService {
         LeadActivity activity = new LeadActivity();
         activity.setLead(lead);
         activity.setActor(actor);
+        activity.setOrganization(lead.getOrganization());
         activity.setType(type);
         activity.setDescription(description);
         leadActivityRepository.save(activity);

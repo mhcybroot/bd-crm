@@ -30,13 +30,13 @@ public class TemplateController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('PLATFORM_ADMIN', 'ORG_ADMIN')")
     public FollowupTemplateResponse createTemplate(@Valid @RequestBody FollowupTemplateRequest request) {
         return templateService.createTemplate(request);
     }
 
     @PutMapping("/{templateId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('PLATFORM_ADMIN', 'ORG_ADMIN')")
     public FollowupTemplateResponse updateTemplate(
             @PathVariable Long templateId,
             @Valid @RequestBody FollowupTemplateRequest request) {

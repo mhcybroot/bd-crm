@@ -13,7 +13,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const uiStore = useUiStore()
 const isEdit = computed(() => !!route.params.id)
-const canManageAssignee = computed(() => authStore.hasRole('ADMIN', 'MANAGER'))
+const canManageAssignee = computed(() => authStore.hasRole('PLATFORM_ADMIN', 'ORG_ADMIN', 'ORG_MANAGER'))
 const loading = ref(false)
 const users = ref<UserResponse[]>([])
 const templates = ref<FollowupTemplateResponse[]>([])
@@ -43,7 +43,9 @@ async function loadReferenceData() {
           email: authStore.user.email,
           active: true,
           managerId: null,
-          roles: authStore.user.roles,
+          organizationId: authStore.user.organizationId,
+          organizationName: authStore.user.organizationName,
+          roles: [...authStore.user.platformRoles, ...authStore.user.organizationRoles],
         }]
       : []
   }

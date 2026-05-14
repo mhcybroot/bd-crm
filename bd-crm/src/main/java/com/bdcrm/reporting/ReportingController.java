@@ -16,25 +16,25 @@ public class ReportingController {
     private final ReportingService reportingService;
 
     @GetMapping("/overview")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('PLATFORM_ADMIN', 'ORG_ADMIN', 'ORG_MANAGER')")
     public ReportsOverviewResponse overview(@ModelAttribute ReportFilterRequest filter) {
         return reportingService.overview(filter);
     }
 
     @GetMapping("/funnel")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('PLATFORM_ADMIN', 'ORG_ADMIN', 'ORG_MANAGER')")
     public Map<String, Long> funnel(@ModelAttribute ReportFilterRequest filter) {
         return reportingService.funnel(filter);
     }
 
     @GetMapping("/followup-performance")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('PLATFORM_ADMIN', 'ORG_ADMIN', 'ORG_MANAGER')")
     public PerformanceReportResponse performance(@ModelAttribute ReportFilterRequest filter) {
         return reportingService.performance(filter);
     }
 
     @GetMapping("/outcomes")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('PLATFORM_ADMIN', 'ORG_ADMIN', 'ORG_MANAGER')")
     public OutcomeSummaryResponse outcomes(@ModelAttribute ReportFilterRequest filter) {
         return reportingService.performance(filter).outcomes();
     }

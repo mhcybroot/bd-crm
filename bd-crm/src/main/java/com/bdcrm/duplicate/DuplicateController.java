@@ -21,25 +21,25 @@ public class DuplicateController {
     private final DuplicateService duplicateService;
 
     @PostMapping("/scan")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('PLATFORM_ADMIN', 'ORG_ADMIN', 'ORG_MANAGER')")
     public List<DuplicateCandidateResponse> scan() {
         return duplicateService.rescan();
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('PLATFORM_ADMIN', 'ORG_ADMIN', 'ORG_MANAGER')")
     public List<DuplicateCandidateResponse> list() {
         return duplicateService.list();
     }
 
     @PatchMapping("/{duplicateId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('PLATFORM_ADMIN', 'ORG_ADMIN', 'ORG_MANAGER')")
     public DuplicateCandidateResponse update(@PathVariable Long duplicateId, @RequestParam DuplicateState state) {
         return duplicateService.updateState(duplicateId, state);
     }
 
     @PostMapping("/merge")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('PLATFORM_ADMIN', 'ORG_ADMIN', 'ORG_MANAGER')")
     public void merge(@Valid @RequestBody LeadMergeRequest request) {
         duplicateService.merge(request);
     }

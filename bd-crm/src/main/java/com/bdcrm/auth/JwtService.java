@@ -27,8 +27,11 @@ public class JwtService {
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(user.getUsername())
-                .claim("roles", user.roles())
                 .claim("userId", user.id())
+                .claim("organizationId", user.organizationId())
+                .claim("organizationSlug", user.organizationSlug())
+                .claim("platformRoles", user.platformRoles())
+                .claim("organizationRoles", user.organizationRoles())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(expirationMinutes, ChronoUnit.MINUTES)))
                 .signWith(secretKey)
@@ -45,8 +48,13 @@ public class JwtService {
     }
 
     @SuppressWarnings("unchecked")
-    public Set<String> extractRoles(String token) {
-        return Set.copyOf(parseClaims(token).get("roles", java.util.List.class));
+    public Set<String> extractPlatformRoles(String token) {
+        return Set.copyOf(parseClaims(token).get("platformRoles", java.util.List.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    public Set<String> extractOrganizationRoles(String token) {
+        return Set.copyOf(parseClaims(token).get("organizationRoles", java.util.List.class));
     }
 
     private Claims parseClaims(String token) {
