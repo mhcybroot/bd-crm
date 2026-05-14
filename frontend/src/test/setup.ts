@@ -35,3 +35,13 @@ Object.defineProperty(globalThis, 'ResizeObserver', {
   value: ResizeObserverMock,
   writable: true,
 })
+
+Object.defineProperty(globalThis, 'visualViewport', {
+  value: {
+    addEventListener() {},
+    removeEventListener() {},
+    width: 1280,
+    height: 720,
+  },
+  writable: true,
+})

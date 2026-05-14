@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
@@ -17,6 +17,7 @@ const search = ref('')
 const searchResults = ref<SearchItem[]>([])
 const searchLoading = ref(false)
 const searchOpen = ref(false)
+const searchError = ref('')
 let searchDebounce: number | undefined
 
 type NavItem = {
@@ -49,32 +50,52 @@ async function loadNotifications() {
   notifications.value = await notificationApi.listNotifications().catch(() => [])
 }
 
-async function runSearch() {
+async function executeSearch(query: string) {
+  searchLoading.value = true
+  searchError.value = ''
+  try {
+    const response = await searchApi.globalSearch({ q: query })
+    searchResults.value = [...response.leads, ...response.notes, ...response.activities, ...response.followups].slice(0, 8)
+  } catch {
+    searchResults.value = []
+    searchError.value = 'Search is unavailable right now'
+  } finally {
+    searchOpen.value = true
+    searchLoading.value = false
+  }
+}
+
+function runSearch() {
   window.clearTimeout(searchDebounce)
   searchDebounce = window.setTimeout(async () => {
     const query = search.value.trim()
     if (!query) {
       searchResults.value = []
+      searchError.value = ''
       searchOpen.value = false
       return
     }
-    searchLoading.value = true
-    const response = await searchApi.globalSearch({ q: query }).catch(() => null)
-    searchResults.value = response ? [...response.leads, ...response.notes, ...response.activities, ...response.followups].slice(0, 8) : []
-    searchOpen.value = response !== null
-    searchLoading.value = false
+    await executeSearch(query)
   }, 250)
+}
+
+function handleSearchFocus() {
+  if (search.value.trim()) {
+    searchOpen.value = true
+  }
 }
 
 async function openResult(item: SearchItem) {
   search.value = ''
   searchResults.value = []
+  searchError.value = ''
   searchOpen.value = false
   if (item.leadId) {
     await router.push(`/leads/${item.leadId}`)
   }
 }
 
+watch(search, runSearch)
 onMounted(loadNotifications)
 </script>
 
@@ -100,34 +121,44 @@ onMounted(loadNotifications)
     <v-app-bar flat color="transparent">
       <v-app-bar-nav-icon @click="drawer = !drawer" />
       <v-toolbar-title>BD CRM Workspace</v-toolbar-title>
-      <div class="mx-4" style="width: 360px; position: relative;">
-        <v-text-field
-          v-model="search"
-          density="comfortable"
-          hide-details
-          variant="outlined"
-          placeholder="Search leads, notes, follow-ups"
-          prepend-inner-icon="mdi-magnify"
-          @update:model-value="runSearch"
-          @focus="searchOpen = searchResults.length > 0"
-        />
-        <v-card
-          v-if="searchOpen"
-          elevation="8"
-          style="position: absolute; top: 56px; left: 0; right: 0; z-index: 2000;"
+      <div class="mx-4" style="width: 360px;">
+        <v-menu
+          v-model="searchOpen"
+          :close-on-content-click="false"
+          :open-on-click="false"
+          :open-on-focus="false"
+          location="bottom"
+          offset="8"
+          content-class="global-search-menu"
         >
-          <v-list>
-            <v-list-item v-if="searchLoading" title="Searching..." />
-            <v-list-item
-              v-for="item in searchResults"
-              :key="`${item.type}-${item.id}`"
-              :title="item.title"
-              :subtitle="item.subtitle || item.type"
-              @click="openResult(item)"
+          <template #activator="{ props }">
+            <v-text-field
+              v-bind="props"
+              v-model="search"
+              density="comfortable"
+              hide-details
+              variant="outlined"
+              placeholder="Search leads, notes, follow-ups"
+              prepend-inner-icon="mdi-magnify"
+              clearable
+              @focus="handleSearchFocus"
             />
-            <v-list-item v-if="!searchLoading && !searchResults.length" title="No results found" />
-          </v-list>
-        </v-card>
+          </template>
+          <v-card elevation="8" min-width="360">
+            <v-list>
+              <v-list-item v-if="searchLoading" title="Searching..." />
+              <v-list-item v-else-if="searchError" :title="searchError" />
+              <v-list-item
+                v-for="item in searchResults"
+                :key="`${item.type}-${item.id}`"
+                :title="item.title"
+                :subtitle="item.subtitle || item.type"
+                @click="openResult(item)"
+              />
+              <v-list-item v-if="!searchLoading && !searchError && !searchResults.length" title="No results found" />
+            </v-list>
+          </v-card>
+        </v-menu>
       </div>
       <v-spacer />
       <v-menu v-model="notificationMenu" location="bottom end">
