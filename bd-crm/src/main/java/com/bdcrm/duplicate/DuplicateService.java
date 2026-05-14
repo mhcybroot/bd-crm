@@ -18,7 +18,12 @@ import com.bdcrm.lead.LeadNoteRepository;
 import com.bdcrm.lead.LeadRepository;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -43,8 +48,16 @@ public class DuplicateService {
 
     @Transactional
     public List<DuplicateCandidateResponse> rescan() {
-        List<Lead> leads = leadRepository.findAll().stream().filter(lead -> lead.getMergedIntoLeadId() == null).toList();
+        List<Lead> leads = leadRepository.findAll().stream()
+                .filter(lead -> lead.getMergedIntoLeadId() == null)
+                .sorted(Comparator.comparing(Lead::getId))
+                .toList();
+        Map<DuplicatePairKey, DuplicateMatch> existingMatches = new HashMap<>();
+        for (DuplicateMatch match : duplicateMatchRepository.findAll()) {
+            existingMatches.put(DuplicatePairKey.of(match.getLead(), match.getMatchedLead()), match);
+        }
         List<DuplicateCandidateResponse> results = new ArrayList<>();
+        Set<Long> suspectedLeadIds = new HashSet<>();
         for (int i = 0; i < leads.size(); i++) {
             for (int j = i + 1; j < leads.size(); j++) {
                 Lead left = leads.get(i);
@@ -53,19 +66,30 @@ public class DuplicateService {
                 if (score < 70) {
                     continue;
                 }
-                DuplicateMatch match = duplicateMatchRepository.findByLeadIdAndMatchedLeadId(left.getId(), right.getId())
-                        .orElseGet(DuplicateMatch::new);
-                match.setLead(left);
-                match.setMatchedLead(right);
+                DuplicatePairKey pairKey = DuplicatePairKey.of(left, right);
+                Lead canonicalLead = pairKey.leadId().equals(left.getId()) ? left : right;
+                Lead canonicalMatchedLead = pairKey.matchedLeadId().equals(right.getId()) ? right : left;
+                DuplicateMatch match = existingMatches.remove(pairKey);
+                if (match == null) {
+                    match = new DuplicateMatch();
+                }
+                match.setLead(canonicalLead);
+                match.setMatchedLead(canonicalMatchedLead);
                 match.setMatchScore(score);
                 match.setState(DuplicateState.SUSPECTED);
                 match.setReason(buildReason(left, right));
+                match.setReviewedBy(null);
+                match.setReviewedAt(null);
                 duplicateMatchRepository.save(match);
-                left.setDuplicateState(DuplicateState.SUSPECTED);
-                right.setDuplicateState(DuplicateState.SUSPECTED);
+                suspectedLeadIds.add(canonicalLead.getId());
+                suspectedLeadIds.add(canonicalMatchedLead.getId());
                 results.add(DuplicateCandidateResponse.from(match));
             }
         }
+        if (!existingMatches.isEmpty()) {
+            duplicateMatchRepository.deleteAll(existingMatches.values());
+        }
+        reconcileLeadStates(leads, suspectedLeadIds);
         return results;
     }
 
@@ -171,5 +195,20 @@ public class DuplicateService {
             }
         }
         return dp[left.length()][right.length()];
+    }
+
+    private void reconcileLeadStates(List<Lead> leads, Set<Long> suspectedLeadIds) {
+        for (Lead lead : leads) {
+            lead.setDuplicateState(suspectedLeadIds.contains(lead.getId()) ? DuplicateState.SUSPECTED : DuplicateState.CLEAR);
+        }
+    }
+
+    private record DuplicatePairKey(Long leadId, Long matchedLeadId) {
+
+        private static DuplicatePairKey of(Lead left, Lead right) {
+            long lowerId = Math.min(left.getId(), right.getId());
+            long higherId = Math.max(left.getId(), right.getId());
+            return new DuplicatePairKey(lowerId, higherId);
+        }
     }
 }

@@ -24,3 +24,14 @@ Object.defineProperty(globalThis, 'localStorage', {
   value: new LocalStorageMock(),
   writable: true,
 })
+
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+Object.defineProperty(globalThis, 'ResizeObserver', {
+  value: ResizeObserverMock,
+  writable: true,
+})

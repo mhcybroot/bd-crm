@@ -61,7 +61,7 @@ async function runSearch() {
     searchLoading.value = true
     const response = await searchApi.globalSearch({ q: query }).catch(() => null)
     searchResults.value = response ? [...response.leads, ...response.notes, ...response.activities, ...response.followups].slice(0, 8) : []
-    searchOpen.value = searchResults.value.length > 0
+    searchOpen.value = response !== null
     searchLoading.value = false
   }, 250)
 }
