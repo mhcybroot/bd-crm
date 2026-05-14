@@ -17,10 +17,10 @@ defineProps<{
       fill-dot
       size="small"
     >
-      <v-card class="pa-4">
+      <v-card class="pa-4 crm-card followup-timeline-card">
         <div class="d-flex justify-space-between flex-wrap ga-3 mb-2">
           <div>
-            <div class="text-subtitle-1 font-weight-bold">Follow-up {{ followup.stepNumber }}</div>
+            <div class="section-heading">Follow-up {{ followup.stepNumber }}</div>
             <div class="text-body-2 text-medium-emphasis">
               {{ titleCase(followup.channel) }} · Due {{ formatDate(followup.dueDate) }}
             </div>
@@ -41,3 +41,11 @@ defineProps<{
     </v-timeline-item>
   </v-timeline>
 </template>
+
+<style scoped>
+.followup-timeline-card {
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, 0.94), rgba(255, 247, 240, 0.84)),
+    radial-gradient(circle at top right, rgba(15, 118, 110, 0.1), transparent 36%);
+}
+</style>

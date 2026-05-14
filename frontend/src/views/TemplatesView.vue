@@ -122,8 +122,8 @@ onMounted(load)
 </script>
 
 <template>
-  <div>
-    <div class="page-header">
+  <div class="page-shell">
+    <div class="page-header page-hero">
       <div>
         <h1 class="page-title">Follow-up Templates</h1>
         <p class="page-subtitle">Design the 7-touch cadence each lead follows after assignment.</p>
@@ -131,12 +131,12 @@ onMounted(load)
       <v-btn color="primary" prepend-icon="mdi-plus" @click="dialog = true; resetForm()">New template</v-btn>
     </div>
 
-    <v-row>
+    <v-row class="crm-stagger">
       <v-col v-for="template in templates" :key="template.id" cols="12" md="6">
-        <v-card class="pa-4 h-100">
+        <v-card class="pa-4 h-100 crm-card">
           <div class="d-flex justify-space-between align-start mb-3">
             <div>
-              <div class="text-h6">{{ template.name }}</div>
+              <div class="section-heading">{{ template.name }}</div>
               <div class="text-body-2 text-medium-emphasis">{{ template.description }}</div>
             </div>
             <div class="d-flex ga-2">
@@ -182,9 +182,10 @@ onMounted(load)
     </v-row>
 
     <v-dialog v-model="dialog" max-width="860">
-      <v-card>
+      <v-card class="glass-dialog-card">
         <v-card-title>{{ editingId ? 'Edit template' : 'New template' }}</v-card-title>
         <v-card-text>
+          <div class="admin-note mb-4">Shape both follow-up cadence and pipeline progression without leaving the template editor.</div>
           <v-row>
             <v-col cols="12" md="6"><v-text-field v-model="form.name" label="Template name" /></v-col>
             <v-col cols="12" md="6"><v-text-field v-model="form.description" label="Description" /></v-col>

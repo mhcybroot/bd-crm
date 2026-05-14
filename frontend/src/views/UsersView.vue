@@ -77,8 +77,8 @@ onMounted(load)
 </script>
 
 <template>
-  <div>
-    <div class="page-header">
+  <div class="page-shell">
+    <div class="page-header page-hero">
       <div>
         <h1 class="page-title">User Administration</h1>
         <p class="page-subtitle">Create internal accounts, assign roles, and control access.</p>
@@ -86,7 +86,7 @@ onMounted(load)
       <v-btn color="primary" prepend-icon="mdi-account-plus-outline" @click="dialog = true">New user</v-btn>
     </div>
 
-    <v-card>
+    <v-card class="crm-card">
       <v-data-table :items="users">
         <template #headers>
           <tr>
@@ -100,7 +100,7 @@ onMounted(load)
           </tr>
         </template>
         <template #item="{ item }">
-          <tr>
+          <tr class="crm-table-row">
             <td>{{ item.fullName }}</td>
             <td>{{ item.username }}</td>
             <td>{{ item.email }}</td>
@@ -127,9 +127,10 @@ onMounted(load)
     </v-card>
 
     <v-dialog v-model="dialog" max-width="640">
-      <v-card>
+      <v-card class="glass-dialog-card">
         <v-card-title>Create user</v-card-title>
         <v-card-text>
+          <div class="admin-note mb-4">Create a new account with the right organization context and role mix from one place.</div>
           <v-row>
             <v-col cols="12" md="6"><v-text-field v-model="form.fullName" label="Full name" /></v-col>
             <v-col cols="12" md="6"><v-text-field v-model="form.username" label="Username" /></v-col>

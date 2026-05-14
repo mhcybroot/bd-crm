@@ -1,10 +1,10 @@
 <template>
-  <v-container class="fill-height">
+  <v-container class="fill-height page-shell">
     <v-row align="center" justify="center">
       <v-col cols="12" md="5">
-        <v-card class="pa-8 text-center">
+        <v-card class="pa-8 text-center crm-card">
           <v-icon icon="mdi-shield-alert-outline" color="warning" size="56" class="mb-4" />
-          <h1 class="text-h4 mb-2">Access restricted</h1>
+          <h1 class="section-heading mb-2">Access restricted</h1>
           <p class="text-medium-emphasis mb-6">
             Your account does not have permission to open this section.
           </p>

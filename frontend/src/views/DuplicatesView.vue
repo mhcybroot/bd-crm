@@ -41,16 +41,19 @@ onMounted(load)
 </script>
 
 <template>
-  <div>
-    <div class="page-header">
+  <div class="page-shell">
+    <div class="page-header page-hero">
       <div>
         <h1 class="page-title">Duplicate Review</h1>
         <p class="page-subtitle">Catch suspected lead collisions before they distort the pipeline and reports.</p>
       </div>
-      <v-btn color="primary" @click="rescan">Run scan</v-btn>
+      <div class="crm-hero-actions">
+        <v-chip color="warning" variant="tonal">{{ duplicates.filter((item) => item.state === 'SUSPECTED').length }} suspected</v-chip>
+        <v-btn color="primary" @click="rescan">Run scan</v-btn>
+      </div>
     </div>
 
-    <v-card>
+    <v-card class="crm-card">
       <v-data-table :items="duplicates" :loading="loading">
         <template #headers>
           <tr>
@@ -63,12 +66,12 @@ onMounted(load)
           </tr>
         </template>
         <template #item="{ item }">
-          <tr>
+          <tr class="crm-table-row">
             <td>{{ item.leadCompanyName }}</td>
             <td>{{ item.matchedLeadCompanyName }}</td>
             <td>{{ item.matchScore }}</td>
             <td>{{ item.reason }}</td>
-            <td>{{ item.state }}</td>
+            <td><v-chip size="small" variant="tonal" :color="item.state === 'REVIEWED' ? 'success' : 'warning'">{{ item.state }}</v-chip></td>
             <td>
               <div class="d-flex ga-2">
                 <v-btn size="small" variant="tonal" color="primary" @click="updateState(item.id, 'REVIEWED')">Review</v-btn>

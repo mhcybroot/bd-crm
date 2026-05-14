@@ -18,7 +18,7 @@ const emit = defineEmits<{
     max-width="420"
     @update:model-value="emit('update:modelValue', $event)"
   >
-    <v-card>
+    <v-card class="glass-dialog-card">
       <v-card-title>{{ title }}</v-card-title>
       <v-card-text>{{ text }}</v-card-text>
       <v-card-actions>

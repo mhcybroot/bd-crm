@@ -43,6 +43,22 @@ const navItems = computed(() =>
   ] as NavItem[]).filter((item) => !item.roles || authStore.hasRole(...item.roles)),
 )
 
+const searchGroups = computed(() => {
+  const order = [
+    ['LEAD', 'Leads'],
+    ['NOTE', 'Notes'],
+    ['ACTIVITY', 'Activities'],
+    ['FOLLOWUP', 'Follow-ups'],
+  ] as const
+  return order
+    .map(([type, label]) => ({
+      type,
+      label,
+      items: searchResults.value.filter((item) => item.type === type),
+    }))
+    .filter((group) => group.items.length)
+})
+
 async function handleLogout() {
   authStore.logout()
   await router.push('/login')
@@ -198,15 +214,18 @@ onMounted(loadNotifications)
             <v-list class="py-1">
               <v-list-item v-if="searchLoading" title="Searching..." subtitle="Pulling results across your CRM" />
               <v-list-item v-else-if="searchError" :title="searchError" subtitle="Try again in a moment" />
-              <v-list-item
-                v-for="item in searchResults"
-                :key="`${item.type}-${item.id}`"
-                :class="['search-result-item', { 'search-result-item--active': searchHighlightIndex === searchResults.indexOf(item) }]"
-                :title="item.title"
-                :subtitle="item.subtitle || item.type"
-                @click="openResult(item)"
-                @mouseenter="searchHighlightIndex = searchResults.indexOf(item)"
-              />
+              <template v-for="group in searchGroups" :key="group.type">
+                <v-list-subheader>{{ group.label }}</v-list-subheader>
+                <v-list-item
+                  v-for="item in group.items"
+                  :key="`${item.type}-${item.id}`"
+                  :class="['search-result-item', { 'search-result-item--active': searchHighlightIndex === searchResults.indexOf(item) }]"
+                  :title="item.title"
+                  :subtitle="item.subtitle || item.type"
+                  @click="openResult(item)"
+                  @mouseenter="searchHighlightIndex = searchResults.indexOf(item)"
+                />
+              </template>
               <v-list-item
                 v-if="!searchLoading && !searchError && !searchResults.length"
                 title="No results found"
@@ -367,6 +386,14 @@ onMounted(loadNotifications)
 .search-result-item--active {
   transform: translateX(4px);
   background: rgba(15, 118, 110, 0.08);
+}
+
+.search-panel :deep(.v-list-subheader) {
+  color: var(--crm-text-faint);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .account-pill {

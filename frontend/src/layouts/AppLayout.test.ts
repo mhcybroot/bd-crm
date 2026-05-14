@@ -100,6 +100,8 @@ describe('AppLayout search', () => {
     await vi.advanceTimersByTimeAsync(250)
     await flushPromises()
 
+    expect(document.body.textContent ?? '').toContain('Notes')
+    expect(document.body.textContent ?? '').toContain('Follow-ups')
     expect(document.body.textContent ?? '').toContain('Meeting recap')
     expect(document.body.textContent ?? '').toContain('Step 1 - COMPLETED - INTERESTED')
 

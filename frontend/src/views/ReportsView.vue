@@ -154,13 +154,13 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
-    <div class="page-header">
+  <div class="page-shell">
+    <div class="page-header page-hero">
       <div>
         <h1 class="page-title">Reporting</h1>
         <p class="page-subtitle">Comprehensive filtered analytics for funnel health, outcomes, and team performance.</p>
       </div>
-      <div class="d-flex ga-2">
+      <div class="crm-hero-actions">
         <v-text-field v-model="viewName" label="Save view as" hide-details density="comfortable" min-width="220" />
         <v-btn color="primary" variant="tonal" @click="saveCurrentView">Save view</v-btn>
         <v-btn color="secondary" variant="tonal" @click="exportCsv">Export CSV</v-btn>
@@ -173,7 +173,7 @@ onMounted(async () => {
       </v-chip>
     </div>
 
-    <v-card class="mb-4">
+    <v-card class="mb-4 crm-card">
       <v-card-text>
         <v-row>
           <v-col cols="12" md="2"><v-text-field v-model="filters.dateFrom" label="Date from" type="date" /></v-col>
@@ -192,43 +192,43 @@ onMounted(async () => {
       </v-card-text>
     </v-card>
 
-    <v-row class="mb-4">
+    <v-row class="mb-4 crm-stagger">
       <v-col cols="12" md="3">
-        <v-card class="pa-5">
-          <div class="text-overline">Leads In Range</div>
-          <div class="text-h4">{{ overview?.summary.leadsInRange ?? 0 }}</div>
+        <v-card class="pa-5 metric-card crm-card">
+          <div class="metric-label">Leads In Range</div>
+          <div class="metric-value">{{ overview?.summary.leadsInRange ?? 0 }}</div>
         </v-card>
       </v-col>
       <v-col cols="12" md="3">
-        <v-card class="pa-5">
-          <div class="text-overline">Completed Follow-ups</div>
-          <div class="text-h4">{{ overview?.summary.followupsCompleted ?? 0 }}</div>
+        <v-card class="pa-5 metric-card crm-card">
+          <div class="metric-label">Completed Follow-ups</div>
+          <div class="metric-value">{{ overview?.summary.followupsCompleted ?? 0 }}</div>
         </v-card>
       </v-col>
       <v-col cols="12" md="3">
-        <v-card class="pa-5">
-          <div class="text-overline">Overdue Follow-ups</div>
-          <div class="text-h4 text-error">{{ overview?.summary.overdueFollowups ?? 0 }}</div>
+        <v-card class="pa-5 metric-card crm-card">
+          <div class="metric-label">Overdue Follow-ups</div>
+          <div class="metric-value text-error">{{ overview?.summary.overdueFollowups ?? 0 }}</div>
         </v-card>
       </v-col>
       <v-col cols="12" md="3">
-        <v-card class="pa-5">
-          <div class="text-overline">Completion Rate</div>
-          <div class="text-h4 text-primary">{{ overview?.summary.completionRate ?? 0 }}%</div>
+        <v-card class="pa-5 metric-card crm-card">
+          <div class="metric-label">Completion Rate</div>
+          <div class="metric-value text-primary">{{ overview?.summary.completionRate ?? 0 }}%</div>
         </v-card>
       </v-col>
     </v-row>
 
     <v-row>
       <v-col cols="12" md="4">
-        <v-card class="pa-4">
-          <div class="text-h6 mb-4">Lead Funnel</div>
+        <v-card class="pa-4 crm-card crm-chart-card">
+          <div class="section-heading mb-4">Lead Funnel</div>
           <Doughnut :data="funnelChart" />
         </v-card>
       </v-col>
       <v-col cols="12" md="8">
-        <v-card class="pa-4">
-          <div class="text-h6 mb-4">Rep Performance</div>
+        <v-card class="pa-4 crm-card crm-chart-card">
+          <div class="section-heading mb-4">Rep Performance</div>
           <Bar :data="repChart" />
         </v-card>
       </v-col>
@@ -236,8 +236,8 @@ onMounted(async () => {
 
     <v-row class="mt-4">
       <v-col cols="12" md="6">
-        <v-card class="pa-4">
-          <div class="text-h6 mb-4">Outcome Breakdown</div>
+        <v-card class="pa-4 crm-card crm-chart-card">
+          <div class="section-heading mb-4">Outcome Breakdown</div>
           <Bar :data="outcomeChart" />
           <div class="text-caption mt-3 text-medium-emphasis">
             Unknown legacy outcomes: {{ overview?.outcomes.unknownOutcomeCount ?? 0 }}
@@ -245,14 +245,14 @@ onMounted(async () => {
         </v-card>
       </v-col>
       <v-col cols="12" md="6">
-        <v-card class="pa-4">
-          <div class="text-h6 mb-4">Trend (Leads vs Completed Follow-ups)</div>
+        <v-card class="pa-4 crm-card crm-chart-card">
+          <div class="section-heading mb-4">Trend (Leads vs Completed Follow-ups)</div>
           <Line :data="trendChart" />
         </v-card>
       </v-col>
     </v-row>
 
-    <v-card class="mt-4">
+    <v-card class="mt-4 crm-card">
       <v-card-title>Rep Performance Table</v-card-title>
       <v-data-table :headers="repTableHeaders" :items="overview?.reps ?? []" :loading="loading" />
     </v-card>

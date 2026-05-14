@@ -134,8 +134,8 @@ void load()
 </script>
 
 <template>
-  <div>
-    <div class="page-header">
+  <div class="page-shell">
+    <div class="page-header page-hero">
       <div>
         <h1 class="page-title">Organizations</h1>
         <p class="page-subtitle">Create companies, seed their first admin, and manage lifecycle status.</p>
@@ -143,7 +143,7 @@ void load()
       <v-btn color="primary" prepend-icon="mdi-domain-plus" data-testid="open-create-organization" @click="createDialog = true">New organization</v-btn>
     </div>
 
-    <v-card>
+    <v-card class="crm-card">
       <v-data-table :items="organizations">
         <template #headers>
           <tr>
@@ -157,10 +157,10 @@ void load()
           </tr>
         </template>
         <template #item="{ item }">
-          <tr>
+          <tr class="crm-table-row">
             <td>{{ item.name }}</td>
             <td>{{ item.slug }}</td>
-            <td>{{ item.status }}</td>
+            <td><v-chip size="small" variant="tonal" :color="item.status === 'ACTIVE' ? 'success' : item.status === 'SUSPENDED' ? 'warning' : 'secondary'">{{ item.status }}</v-chip></td>
             <td>{{ item.timezone }}</td>
             <td>{{ item.planCode }}</td>
             <td>{{ item.contactEmail }}</td>
@@ -183,9 +183,10 @@ void load()
     </v-card>
 
     <v-dialog v-model="createDialog" max-width="880">
-      <v-card>
+      <v-card class="glass-dialog-card">
         <v-card-title>Create organization</v-card-title>
         <v-card-text>
+          <div class="admin-note mb-4">Bootstrap a new company and its first organization admin in one controlled setup flow.</div>
           <v-row>
             <v-col cols="12"><div class="text-subtitle-2">Organization</div></v-col>
             <v-col cols="12" md="6"><v-text-field v-model="bootstrapForm.organization.name" label="Company name" data-testid="bootstrap-org-name" /></v-col>
@@ -213,7 +214,7 @@ void load()
     </v-dialog>
 
     <v-dialog v-model="editDialog" max-width="760">
-      <v-card>
+      <v-card class="glass-dialog-card">
         <v-card-title>Edit organization</v-card-title>
         <v-card-text>
           <v-row>

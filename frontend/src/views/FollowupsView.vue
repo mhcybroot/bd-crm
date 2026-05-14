@@ -95,19 +95,34 @@ async function submitBulkAction() {
 </script>
 
 <template>
-  <div>
-    <div class="page-header">
+  <div class="page-shell">
+    <div class="page-header page-hero">
       <div>
         <h1 class="page-title">Follow-up Queue</h1>
         <p class="page-subtitle">Work the open cadence, handle overdue items, and keep ownership clear.</p>
       </div>
-      <div class="d-flex ga-2">
+      <div class="crm-hero-actions">
         <v-select v-model="statusFilter" label="Queue" :items="['open', 'due', 'overdue', 'upcoming', 'completed']" max-width="180" />
         <v-btn variant="tonal" color="primary" @click="bulkDialog = true">Bulk action</v-btn>
       </div>
     </div>
 
-    <v-card>
+    <div class="workflow-kpi-strip mb-4 crm-stagger">
+      <div class="workflow-kpi">
+        <div class="metric-label">Open Queue</div>
+        <div class="text-h5 font-weight-bold mt-2">{{ followups.filter((item) => canMutate(item)).length }}</div>
+      </div>
+      <div class="workflow-kpi">
+        <div class="metric-label">Completed In View</div>
+        <div class="text-h5 font-weight-bold mt-2">{{ followups.filter((item) => item.status === 'COMPLETED').length }}</div>
+      </div>
+      <div class="workflow-kpi">
+        <div class="metric-label">Overdue Focus</div>
+        <div class="text-h5 font-weight-bold mt-2">{{ followups.filter((item) => item.status === 'OVERDUE').length }}</div>
+      </div>
+    </div>
+
+    <v-card class="crm-card">
       <v-data-table :items="followups" :loading="loading">
         <template #headers>
           <tr>
@@ -122,7 +137,7 @@ async function submitBulkAction() {
           </tr>
         </template>
         <template #item="{ item }">
-          <tr>
+          <tr class="crm-table-row">
             <td>{{ item.stepNumber }}</td>
             <td>{{ formatDate(item.dueDate) }}</td>
             <td>{{ item.assignedUserName }}</td>
@@ -145,7 +160,7 @@ async function submitBulkAction() {
     </v-card>
 
     <v-dialog v-model="dialog.open" max-width="520">
-      <v-card>
+      <v-card class="glass-dialog-card">
         <v-card-title class="text-capitalize">{{ dialog.mode }} follow-up</v-card-title>
         <v-card-text>
           <v-select
@@ -174,7 +189,7 @@ async function submitBulkAction() {
     </v-dialog>
 
     <v-dialog v-model="bulkDialog" max-width="640">
-      <v-card>
+      <v-card class="glass-dialog-card">
         <v-card-title>Bulk Follow-up Action</v-card-title>
         <v-card-text>
           <v-select v-model="bulk.followupIds" label="Follow-ups" :items="followups" item-title="stepNumber" item-value="id" multiple chips />

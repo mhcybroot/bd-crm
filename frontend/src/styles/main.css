@@ -222,6 +222,51 @@ a {
   background: linear-gradient(90deg, rgba(17, 34, 51, 0.14), rgba(17, 34, 51, 0.03));
 }
 
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.workflow-panel {
+  padding: 24px;
+}
+
+.workflow-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.workflow-kpi {
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(17, 34, 51, 0.08);
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.admin-note {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(234, 88, 12, 0.08));
+  color: var(--crm-text-soft);
+}
+
+.crm-board-column {
+  min-height: 220px;
+}
+
+.crm-chart-card canvas {
+  max-height: 320px !important;
+}
+
+.glass-dialog-card {
+  border: 1px solid rgba(255, 255, 255, 0.56);
+  background: linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(255, 248, 242, 0.92));
+  backdrop-filter: var(--crm-blur);
+  box-shadow: var(--crm-shadow-lg);
+}
+
 .crm-hero-actions {
   display: flex;
   flex-wrap: wrap;
@@ -330,6 +375,10 @@ a {
 
   .page-title {
     font-size: 2.2rem;
+  }
+
+  .workflow-kpi-strip {
+    grid-template-columns: 1fr;
   }
 }
 

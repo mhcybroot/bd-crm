@@ -192,7 +192,7 @@ async function runImport() {
 
 <template>
   <v-dialog :model-value="modelValue" max-width="1180" scrollable @update:model-value="updateModelValue">
-    <v-card>
+    <v-card class="glass-dialog-card import-dialog-card">
       <v-card-title class="d-flex align-center justify-space-between">
         <span>Import Leads</span>
         <v-btn icon="mdi-close" variant="text" @click="updateModelValue(false)" />
@@ -215,7 +215,7 @@ async function runImport() {
 
         <div class="mt-6 d-flex flex-column ga-6">
           <div v-if="step === 1" class="d-grid ga-4" style="grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);">
-            <v-card variant="outlined">
+            <v-card variant="outlined" class="crm-card">
               <v-card-title>Start with the sample template</v-card-title>
               <v-card-text class="d-flex flex-column ga-4">
                 <p class="text-body-1">
@@ -231,7 +231,7 @@ async function runImport() {
           </div>
 
           <div v-else-if="step === 2" class="d-grid ga-4" style="grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);">
-            <v-card variant="outlined">
+            <v-card variant="outlined" class="crm-card">
               <v-card-title>Upload a CSV file</v-card-title>
               <v-card-text class="d-flex flex-column ga-4">
                 <v-file-input
@@ -289,32 +289,32 @@ async function runImport() {
             </div>
             <v-row>
               <v-col cols="6" md="2">
-                <v-sheet rounded class="pa-3 border">
-                  <div class="text-caption text-medium-emphasis">Created</div>
+                <v-sheet rounded class="pa-3 border workflow-kpi">
+                  <div class="metric-label">Created</div>
                   <div class="text-h6">{{ result.createdCount }}</div>
                 </v-sheet>
               </v-col>
               <v-col cols="6" md="2">
-                <v-sheet rounded class="pa-3 border">
-                  <div class="text-caption text-medium-emphasis">Updated</div>
+                <v-sheet rounded class="pa-3 border workflow-kpi">
+                  <div class="metric-label">Updated</div>
                   <div class="text-h6">{{ result.updatedCount }}</div>
                 </v-sheet>
               </v-col>
               <v-col cols="6" md="2">
-                <v-sheet rounded class="pa-3 border">
-                  <div class="text-caption text-medium-emphasis">Skipped</div>
+                <v-sheet rounded class="pa-3 border workflow-kpi">
+                  <div class="metric-label">Skipped</div>
                   <div class="text-h6">{{ result.skippedCount }}</div>
                 </v-sheet>
               </v-col>
               <v-col cols="6" md="2">
-                <v-sheet rounded class="pa-3 border">
-                  <div class="text-caption text-medium-emphasis">Duplicates</div>
+                <v-sheet rounded class="pa-3 border workflow-kpi">
+                  <div class="metric-label">Duplicates</div>
                   <div class="text-h6">{{ result.duplicateCount }}</div>
                 </v-sheet>
               </v-col>
               <v-col cols="6" md="2">
-                <v-sheet rounded class="pa-3 border">
-                  <div class="text-caption text-medium-emphasis">Invalid</div>
+                <v-sheet rounded class="pa-3 border workflow-kpi">
+                  <div class="metric-label">Invalid</div>
                   <div class="text-h6">{{ result.invalidCount }}</div>
                 </v-sheet>
               </v-col>
@@ -346,3 +346,9 @@ async function runImport() {
     </v-card>
   </v-dialog>
 </template>
+
+<style scoped>
+.import-dialog-card {
+  overflow: hidden;
+}
+</style>

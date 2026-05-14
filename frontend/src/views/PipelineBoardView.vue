@@ -177,8 +177,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
-    <div class="page-header">
+  <div class="page-shell">
+    <div class="page-header page-hero">
       <div>
         <h1 class="page-title">Pipeline Board</h1>
         <p class="page-subtitle">Track large pipelines by stage, SLA, and owner without loading every lead card at once.</p>
@@ -193,7 +193,7 @@ onMounted(async () => {
       />
     </div>
 
-    <v-card class="mb-4">
+    <v-card class="mb-4 crm-card">
       <v-card-text>
         <v-row>
           <v-col cols="12" md="3">
@@ -238,7 +238,7 @@ onMounted(async () => {
         xl="3"
       >
         <v-card
-          class="fill-height"
+          class="fill-height crm-card crm-board-column"
           :class="{ 'pipeline-drop-active': dragOverStageId === column.stageId }"
           @dragover.prevent="dragOverStageId = column.stageId"
           @dragleave="dragOverStageId = null"
@@ -247,19 +247,19 @@ onMounted(async () => {
           <v-card-text class="d-flex flex-column ga-4">
             <div class="d-flex justify-space-between align-start">
               <div>
-                <div class="text-h6">{{ column.stageName }}</div>
+                <div class="section-heading">{{ column.stageName }}</div>
                 <div class="text-caption text-medium-emphasis">SLA {{ column.slaHours }}h</div>
               </div>
               <v-chip size="small" color="primary" variant="tonal">{{ column.leadCount }}</v-chip>
             </div>
 
             <div class="d-flex ga-3">
-              <v-sheet rounded class="pa-3 border flex-1-1">
-                <div class="text-caption text-medium-emphasis">Leads</div>
+              <v-sheet rounded class="pa-3 border flex-1-1 workflow-kpi">
+                <div class="metric-label">Leads</div>
                 <div class="text-h6">{{ column.leadCount }}</div>
               </v-sheet>
-              <v-sheet rounded class="pa-3 border flex-1-1">
-                <div class="text-caption text-medium-emphasis">SLA breach</div>
+              <v-sheet rounded class="pa-3 border flex-1-1 workflow-kpi">
+                <div class="metric-label">SLA breach</div>
                 <div class="text-h6">{{ column.slaBreachCount }}</div>
               </v-sheet>
             </div>
@@ -286,6 +286,7 @@ onMounted(async () => {
       location="right"
       temporary
       width="520"
+      class="stage-drawer"
     >
       <div class="d-flex justify-space-between align-center pa-4 border-b">
         <div>
@@ -306,7 +307,7 @@ onMounted(async () => {
           <v-card
             v-for="lead in stagePage.content"
             :key="lead.id"
-            class="pa-3"
+            class="pa-3 crm-card"
             variant="outlined"
             draggable="true"
             @dragstart="startDrag(lead.id)"
@@ -369,6 +370,7 @@ onMounted(async () => {
   outline: 2px dashed rgb(var(--v-theme-primary));
   outline-offset: 4px;
   background: rgba(var(--v-theme-primary), 0.04);
+  transform: translateY(-4px) scale(1.01);
 }
 
 .border-b {
@@ -377,5 +379,10 @@ onMounted(async () => {
 
 .flex-1-1 {
   flex: 1 1 0;
+}
+
+.stage-drawer {
+  background: linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(255, 248, 242, 0.94));
+  backdrop-filter: blur(18px);
 }
 </style>
