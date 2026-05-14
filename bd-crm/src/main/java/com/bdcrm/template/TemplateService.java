@@ -72,6 +72,9 @@ public class TemplateService {
     public FollowupTemplateResponse updateTemplate(Long templateId, FollowupTemplateRequest request) {
         FollowupTemplate template = getTemplateEntity(templateId);
         template.getSteps().clear();
+        // Flush orphan removals before re-adding the same step numbers so the
+        // template-level unique constraint does not see both generations at once.
+        templateRepository.flush();
         apply(template, request);
         return FollowupTemplateResponse.from(template);
     }

@@ -108,6 +108,28 @@ async function saveEdit() {
   }
 }
 
+async function toggleOrganizationStatus(organization: OrganizationResponse) {
+  const nextStatus = organization.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE'
+  try {
+    await organizationApi.updateOrganization(organization.id, {
+      slug: organization.slug,
+      name: organization.name,
+      status: nextStatus,
+      timezone: organization.timezone,
+      locale: organization.locale,
+      contactEmail: organization.contactEmail,
+      planCode: organization.planCode,
+      dataRetentionDays: organization.dataRetentionDays,
+    })
+    uiStore.showSuccess(nextStatus === 'SUSPENDED'
+      ? `${organization.name} temporarily blocked`
+      : `${organization.name} reactivated`)
+    await load()
+  } catch (error) {
+    uiStore.showError(error instanceof Error ? error.message : 'Unable to update organization status')
+  }
+}
+
 void load()
 </script>
 
@@ -143,6 +165,16 @@ void load()
             <td>{{ item.planCode }}</td>
             <td>{{ item.contactEmail }}</td>
             <td>
+              <v-btn
+                size="small"
+                class="mr-2"
+                :color="item.status === 'ACTIVE' ? 'warning' : 'success'"
+                variant="tonal"
+                :data-testid="`toggle-organization-status-${item.id}`"
+                @click="toggleOrganizationStatus(item)"
+              >
+                {{ item.status === 'ACTIVE' ? 'Block' : 'Activate' }}
+              </v-btn>
               <v-btn size="small" variant="tonal" @click="openEdit(item)">Edit</v-btn>
             </td>
           </tr>

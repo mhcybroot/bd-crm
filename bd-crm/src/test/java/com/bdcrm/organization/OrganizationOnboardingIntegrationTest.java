@@ -3,6 +3,7 @@ package com.bdcrm.organization;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -183,6 +184,65 @@ class OrganizationOnboardingIntegrationTest {
                 .andExpect(status().isBadRequest());
 
         assertThat(organizationRepository.findBySlugIgnoreCase("paused-org")).isEmpty();
+    }
+
+    @Test
+    void suspendedOrganizationUsersCannotLogin() throws Exception {
+        mockMvc.perform(post("/api/organizations/bootstrap")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("admin", "password"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "organization": {
+                                    "slug": "blockable-org",
+                                    "name": "Blockable Org",
+                                    "status": "ACTIVE",
+                                    "timezone": "UTC",
+                                    "locale": "en-US",
+                                    "contactEmail": "ops@blockable.test",
+                                    "planCode": "standard",
+                                    "dataRetentionDays": 365
+                                  },
+                                  "adminUser": {
+                                    "username": "blockable-admin",
+                                    "password": "secret123",
+                                    "fullName": "Blockable Admin",
+                                    "email": "admin@blockable.test"
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        Long organizationId = organizationRepository.findBySlugIgnoreCase("blockable-org").orElseThrow().getId();
+
+        mockMvc.perform(put("/api/organizations/{organizationId}", organizationId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer("admin", "password"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "slug": "blockable-org",
+                                  "name": "Blockable Org",
+                                  "status": "SUSPENDED",
+                                  "timezone": "UTC",
+                                  "locale": "en-US",
+                                  "contactEmail": "ops@blockable.test",
+                                  "planCode": "standard",
+                                  "dataRetentionDays": 365
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUSPENDED"));
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "blockable-admin",
+                                  "password": "secret123"
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Your organization is temporarily blocked"));
     }
 
     private String bearer(String username, String password) throws Exception {

@@ -28,7 +28,8 @@ public class SecurityUtils {
         }
         User currentUser = userRepository.findById(user.id())
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Authenticated user no longer exists"));
-        if (currentUser.getOrganization().getStatus() != OrganizationStatus.ACTIVE) {
+        boolean isPlatformAdmin = currentUser.getRoles().stream().anyMatch(role -> role.getName().name().equals("PLATFORM_ADMIN"));
+        if (!isPlatformAdmin && currentUser.getOrganization().getStatus() != OrganizationStatus.ACTIVE) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Organization is not active");
         }
         return currentUser;

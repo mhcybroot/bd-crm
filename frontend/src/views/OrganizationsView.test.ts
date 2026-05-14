@@ -87,6 +87,37 @@ describe('OrganizationsView', () => {
     expect(bootstrapOrganizationMock).toHaveBeenCalled()
     expect(listOrganizationsMock).toHaveBeenCalledTimes(2)
   })
+
+  it('temporarily blocks an active organization from the list', async () => {
+    updateOrganizationMock.mockResolvedValue({
+      id: 1,
+      slug: 'default',
+      name: 'Default Organization',
+      status: 'SUSPENDED',
+      timezone: 'UTC',
+      locale: 'en-US',
+      contactEmail: 'admin@example.com',
+      planCode: 'standard',
+      dataRetentionDays: 365,
+    })
+
+    const wrapper = mount(OrganizationsView, {
+      attachTo: document.body,
+      global: {
+        plugins: [createPinia(), vuetify],
+      },
+    })
+
+    await flushPromises()
+    await wrapper.get('[data-testid="toggle-organization-status-1"]').trigger('click')
+    await flushPromises()
+
+    expect(updateOrganizationMock).toHaveBeenCalledWith(1, expect.objectContaining({
+      status: 'SUSPENDED',
+      slug: 'default',
+    }))
+    expect(listOrganizationsMock).toHaveBeenCalledTimes(2)
+  })
 })
 
 async function setInputValue(selector: string, value: string) {
